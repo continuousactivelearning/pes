@@ -17,19 +17,6 @@ export const submitEvaluation = async (
       return;
     }
 
-    const exam = await Exam.findById(examId);
-    if (!exam) {
-      res.status(404).json({ error: 'Exam not found' });
-      return;
-    }
-
-    if (!Array.isArray(marks) || marks.length !== exam.numQuestions) {
-      res.status(400).json({
-        error: `Expected ${exam.numQuestions} marks, but received ${marks.length}`,
-      });
-      return;
-    }
-
     const existing = await Evaluation.findOne({
       exam: examId,
       evaluator: evaluatorId,
