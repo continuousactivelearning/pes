@@ -1,9 +1,9 @@
 import { Router } from 'express';
-import { 
-  getFlaggedEvaluations, 
-  getEvaluationDetails, 
-  resolveFlag, 
-  escalateToTeacher 
+import {
+  getFlaggedEvaluations,
+  getEvaluationDetails,
+  resolveFlag,
+  escalateToTeacher
 } from '../../controllers/ta/ta.controller.ts';
 import { authMiddleware } from '../../middlewares/authMiddleware.ts';
 import { authorizeRoles } from '../../middlewares/authorizeRoles.ts';
