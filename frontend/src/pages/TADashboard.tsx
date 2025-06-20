@@ -1,5 +1,5 @@
 import React, { useEffect, useState, type JSX } from 'react';
-import { FiMenu, FiLogOut, FiHome, FiShield, FiDownload, FiUpload, FiSend } from 'react-icons/fi';
+import { FiMenu, FiLogOut, FiHome, FiShield, FiDownload, FiEdit, FiSend } from 'react-icons/fi';
 
 const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
   const [activePage, setActivePage] = useState("home");
@@ -9,6 +9,8 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
   //const [showSettings, setShowSettings] = useState(false);
   const [commentDialog, setCommentDialog] = useState<{ show: boolean; id: number | null }>({ show: false, id: null });
   const [comment, setComment] = useState('');
+  const [updateMarksDialog, setUpdateMarksDialog] = useState<{ show: boolean; id: number | null }>({ show: false, id: null });
+  const [newMarks, setNewMarks] = useState('');
 
   useEffect(() => {
     if (darkMode) {
@@ -48,7 +50,8 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
       studentId: 'CS2023123',
       course: 'Data Structures',
       batch: 'Batch-A',
-      reason: 'Marks not justified based on answer length.'
+      reason: 'Marks not justified based on answer length.',
+      marks: 65
     },
     {
       id: 2,
@@ -56,7 +59,8 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
       studentId: 'CS2023087',
       course: 'Operating Systems',
       batch: 'Batch-B',
-      reason: 'Some answers were not evaluated.'
+      reason: 'Some answers were not evaluated.',
+      marks: 78
     },
     {
       id: 3,
@@ -64,16 +68,37 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
       studentId: 'CS2023176',
       course: 'Algorithms',
       batch: 'Batch-C',
-      reason: 'Incorrect deduction in a 10-mark question.'
+      reason: 'Incorrect deduction in a 10-mark question.',
+      marks: 82
     }
   ]);
 
-  const handleTranscriptUpload = (id: number) => {
-    alert(`Upload transcript for evaluation ${id}`);
-  };
-
   const handleTranscriptDownload = (id: number) => {
     alert(`Download transcript for evaluation ${id}`);
+  };
+
+  const handleUpdateMarks = (id: number) => {
+    const evaluation = flaggedEvaluations.find(ev => ev.id === id);
+    if (evaluation) {
+      setNewMarks(evaluation.marks.toString());
+      setUpdateMarksDialog({ show: true, id });
+    }
+  };
+
+  const confirmUpdateMarks = () => {
+    if (updateMarksDialog.id !== null) {
+      const updatedMarks = parseInt(newMarks);
+      if (!isNaN(updatedMarks) && updatedMarks >= 0 && updatedMarks <= 100) {
+        setFlaggedEvaluations(prev => 
+          prev.map(ev => ev.id === updateMarksDialog.id ? {...ev, marks: updatedMarks} : ev)
+        );
+        alert(`Marks updated for evaluation ${updateMarksDialog.id} to ${updatedMarks}`);
+        setUpdateMarksDialog({ show: false, id: null });
+        setNewMarks('');
+      } else {
+        alert("Please enter valid marks between 0 and 100");
+      }
+    }
   };
 
   const handleSendToTeacher = (id: number) => {
@@ -105,7 +130,11 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
               <ul className="w-full">
                 {flaggedEvaluations.slice(0, 3).map(ev => (
                   <li key={ev.id} className="mb-2 bg-white rounded-xl p-3 shadow text-left">
-                    <span className="font-semibold">{ev.student}</span> ({ev.studentId}) flagged <span className="font-semibold">{ev.course}</span> [{ev.batch}]: {ev.reason}
+                    <div className="flex justify-between">
+                      <span className="font-semibold">{ev.student}</span>
+                      <span className="font-bold text-red-600">Marks: {ev.marks}/100</span>
+                    </div>
+                    <div>({ev.studentId}) flagged <span className="font-semibold">{ev.course}</span> [{ev.batch}]: {ev.reason}</div>
                   </li>
                 ))}
               </ul>
@@ -132,16 +161,17 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
             <ul className="space-y-4">
               {flaggedEvaluations.map(ev => (
                 <li key={ev.id} className="bg-red-50 border border-red-200 rounded-xl p-4 shadow">
-                  <div className="font-semibold text-md text-gray-800 mb-1">
-                    {ev.student} ({ev.studentId}) from batch <span className="text-purple-700">{ev.batch}</span> in <span className="text-blue-800">{ev.course}</span>
+                  <div className="font-semibold text-md text-gray-800 mb-1 flex justify-between">
+                    <span>{ev.student} ({ev.studentId}) from batch <span className="text-purple-700">{ev.batch}</span> in <span className="text-blue-800">{ev.course}</span></span>
+                    <span className="text-red-600 font-bold">Current Marks: {ev.marks}/100</span>
                   </div>
                   <div className="text-gray-700 mb-2">Reason: {ev.reason}</div>
                   <div className="flex gap-4">
                     <button onClick={() => handleTranscriptDownload(ev.id)} className="flex items-center gap-2 text-blue-600 hover:underline">
                       <FiDownload /> Download Transcript
                     </button>
-                    <button onClick={() => handleTranscriptUpload(ev.id)} className="flex items-center gap-2 text-green-600 hover:underline">
-                      <FiUpload /> Upload Evaluation
+                    <button onClick={() => handleUpdateMarks(ev.id)} className="flex items-center gap-2 text-green-600 hover:underline">
+                      <FiEdit /> Update Marks
                     </button>
                     <button onClick={() => handleSendToTeacher(ev.id)} className="flex items-center gap-2 text-red-600 hover:underline">
                       <FiSend /> Send to Teacher
@@ -202,6 +232,24 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
           <div className="flex gap-4">
             <button onClick={() => setCommentDialog({ show: false, id: null })} className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
             <button onClick={confirmSendToTeacher} className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600">Send</button>
+          </div>
+        </DialogBox>
+        
+        <DialogBox show={updateMarksDialog.show} message="Update evaluation marks">
+          <div className="w-full mb-4">
+            <label className="block text-gray-700 mb-2">Enter new marks (0-100):</label>
+            <input 
+              type="number" 
+              min="0" 
+              max="100"
+              value={newMarks} 
+              onChange={e => setNewMarks(e.target.value)}
+              className="w-full border rounded-lg p-2 text-gray-800" 
+            />
+          </div>
+          <div className="flex gap-4">
+            <button onClick={() => setUpdateMarksDialog({ show: false, id: null })} className="bg-gray-300 px-4 py-2 rounded-lg hover:bg-gray-400">Cancel</button>
+            <button onClick={confirmUpdateMarks} className="bg-green-500 text-white px-4 py-2 rounded-lg hover:bg-green-600">Save Changes</button>
           </div>
         </DialogBox>
       </div>
