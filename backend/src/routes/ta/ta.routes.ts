@@ -3,7 +3,8 @@ import {
   getFlaggedEvaluations, 
   getEvaluationDetails, 
   resolveFlag, 
-  escalateToTeacher 
+  escalateToTeacher,
+  getSubmissionPdf // Add this import
 } from '../../controllers/ta/ta.controller.ts';
 import { authMiddleware } from '../../middlewares/authMiddleware.ts';
 import { authorizeRoles } from '../../middlewares/authorizeRoles.ts';
@@ -30,5 +31,8 @@ router.post('/resolve-flag/:flagId', resolveFlag);
 
 // Escalate a flagged evaluation to a teacher
 router.post('/escalate/:flagId', escalateToTeacher);
+
+// New route: Get submission PDF
+router.get('/submission/:evaluationId', getSubmissionPdf);
 
 export default router;
