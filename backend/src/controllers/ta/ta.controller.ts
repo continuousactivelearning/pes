@@ -3,6 +3,7 @@ import { Flag } from '../../models/Flag.ts';
 import { Evaluation } from '../../models/Evaluation.ts';
 import { User } from '../../models/User.ts';
 import { Notification } from '../../models/Notification.ts';
+import { Submission } from '../../models/Submission.ts';
 
 /**
  * Get all flagged evaluations that need TA review
@@ -30,6 +31,49 @@ export const getFlaggedEvaluations = async (
     res.json({ flaggedEvaluations });
   } catch (error) {
     console.error('Error fetching flagged evaluations:', error);
+    next(error);
+  }
+};
+
+
+
+/**
+ * Get the submission PDF associated with an evaluation
+ */
+export const getSubmissionPdf = async (
+  req: Request, 
+  res: Response, 
+  next: NextFunction
+): Promise<void> => {
+  try {
+    const { evaluationId } = req.params;
+    
+    // Find the evaluation
+    const evaluation = await Evaluation.findById(evaluationId);
+    if (!evaluation) {
+      res.status(404).json({ error: 'Evaluation not found' });
+      return;
+    }
+    
+    // Find the submission for this evaluation
+    const submission = await Submission.findOne({
+      exam: evaluation.exam,
+      student: evaluation.evaluatee
+    });
+    
+    if (!submission) {
+      res.status(404).json({ error: 'Submission not found' });
+      return;
+    }
+    
+    // Set appropriate headers for PDF download
+    res.setHeader('Content-Type', submission.answerPdfMimeType);
+    res.setHeader('Content-Disposition', `attachment; filename="submission_${evaluation.evaluatee}.pdf"`);
+    
+    // Send the PDF data
+    res.send(submission.answerPdf);
+  } catch (error) {
+    console.error('Error fetching submission PDF:', error);
     next(error);
   }
 };
@@ -69,6 +113,8 @@ export const getEvaluationDetails = async (
 /**
  * Resolve a flagged evaluation
  */
+// Update the resolveFlag function with this validation
+
 export const resolveFlag = async (
   req: Request, 
   res: Response, 
@@ -77,7 +123,7 @@ export const resolveFlag = async (
   try {
     const { flagId } = req.params;
     const { resolution, newMarks, feedback } = req.body;
-    const taId = (req as any).user.id; // TA ID from auth middleware
+    const taId = (req as any).user.id;
     
     const flag = await Flag.findById(flagId);
     if (!flag) {
@@ -90,11 +136,41 @@ export const resolveFlag = async (
     flag.resolvedBy = taId;
     await flag.save();
     
-    // If new marks are provided, update the evaluation
+    // If new marks are provided, validate and update the evaluation
     if (newMarks) {
+      // Get the evaluation
+      const evaluation = await Evaluation.findById(flag.evaluation);
+      if (!evaluation) {
+        res.status(404).json({ error: 'Evaluation not found' });
+        return;
+      }
+      
+      // Validate marks
+      if (!Array.isArray(newMarks)) {
+        res.status(400).json({ error: 'Marks must be provided as an array' });
+        return;
+      }
+      
+      if (newMarks.length !== evaluation.marks.length) {
+        res.status(400).json({ 
+          error: `Expected ${evaluation.marks.length} marks, but received ${newMarks.length}` 
+        });
+        return;
+      }
+      
+      for (const mark of newMarks) {
+        if (typeof mark !== 'number' || mark < 0 || mark > 20) {
+          res.status(400).json({ 
+            error: 'Each mark must be a number between 0 and 20' 
+          });
+          return;
+        }
+      }
+      
+      // Update the evaluation
       await Evaluation.findByIdAndUpdate(flag.evaluation, { 
         marks: newMarks,
-        feedback: feedback || undefined,
+        feedback: feedback || evaluation.feedback,
       });
     }
     
@@ -177,3 +253,4 @@ export const escalateToTeacher = async (
     next(error);
   }
 };
+
