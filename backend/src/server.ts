@@ -1,9 +1,10 @@
 
 import express from "express";
 import connectDB from "./config/db.ts";
+import teacherRoutes from "./routes/teacher/teacher.routes.ts";
 import studentRoutes from "./routes/student/student.routes.ts";
 import taRoutes from "./routes/ta/ta.routes.ts"; 
-import teacherRoutes from "./routes/teacher/teacher.routes.ts";
+
 import authRoutes from './routes/authorization/auth.routes.ts';
 import adminroutes from './routes/admin/admin.routes.ts';
 // import adminstudentroutes from './routes/admin/student_admin.routes.ts';
@@ -13,12 +14,14 @@ import admincourseroutes from './routes/admin/admin.routes.ts';
 
 
 
+
 import "./models/Course.ts";
 import "./models/Batch.ts";
 import "./models/Exam.ts";
 import "./models/User.ts";
 import "./models/Flag.ts"; 
 import "./jobs/evaluationReminder.job.ts";
+import "./models/TeacherTicket.ts";
 
 import cors from 'cors';
 import dotenv from "dotenv";
@@ -50,13 +53,14 @@ app.use(express.json());
 connectDB();
 
 // Routes
+app.use('/api/teacher', teacherRoutes);
+console.log("Teacher routes mounted at /api/teacher");
 app.use("/api/admin",adminroutes);
 // app.use("/api/admin/student",adminstudentroutes);
 // app.use("/api/admin/teachers",adminteachroutes);
 app.use("/api/student", studentRoutes);
 app.use('/api/auth', authRoutes);
 app.use('/api/ta', taRoutes);
-app.use('/api/teacher', teacherRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use("/api/admin/courses", admincourseroutes);
 

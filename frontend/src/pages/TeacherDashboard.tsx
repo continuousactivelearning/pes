@@ -1,4 +1,6 @@
 import React, { useState, useEffect } from 'react';
+
+
 import type { JSX } from 'react';
 import {
   FiMenu, FiLogOut, FiHome,
@@ -94,6 +96,12 @@ const TeacherDashboard = ({ onLogout }: { onLogout?: () => void }) => {
   //const [darkMode, setDarkMode] = useState(false);
   //const [showSettings, setShowSettings] = useState(false);
   const [enrollError, setEnrollError] = useState('');
+ 
+
+
+
+
+  
 
   /*useEffect(() => {
     if (darkMode) {
@@ -346,6 +354,9 @@ const TeacherDashboard = ({ onLogout }: { onLogout?: () => void }) => {
       </div>
     );
   };
+
+  
+
 
   const pages: Record<string, JSX.Element> = {
     home: (
@@ -806,6 +817,8 @@ const TeacherDashboard = ({ onLogout }: { onLogout?: () => void }) => {
         )}
       </div>
     ),
+
+    
   };
 
   return (
@@ -829,7 +842,8 @@ const TeacherDashboard = ({ onLogout }: { onLogout?: () => void }) => {
           </h2>
           <ul className="space-y-3 w-full">
             {['home', 'roleManager', 'courses', 'exams'].map((key) => {
-              const icons: Record<string, any> = { home: FiHome, roleManager: FiShield, courses: FiBook, exams: FiEdit };
+              const icons: Record<string, any> = { home: FiHome, roleManager: FiShield, courses: FiBook, exams: FiEdit,
+ };
               const Icon = icons[key];
               return (
                 <li
