@@ -35,23 +35,30 @@ export const raiseTicket = async (
       return;
     }
 
-    const taId = batch.ta?.[0];
-    if (!taId) {
-      res.status(404).json({ error: "No TA assigned to this batch" });
+    if (!batch.ta || batch.ta.length === 0) {
+      res.status(404).json({ error: "No TAs assigned to this batch" });
       return;
     }
 
-    const newTicket = new Ticket({
-      student: studentId,
-      evaluator: evaluatorId,
-      ta: taId,
-      exam: examId,
-      message,
+    // Create a ticket for each TA in the batch
+    const tickets = [];
+    for (const taId of batch.ta) {
+      const newTicket = new Ticket({
+        student: studentId,
+        evaluator: evaluatorId,
+        ta: taId,
+        exam: examId,
+        message,
+      });
+      
+      await newTicket.save();
+      tickets.push(newTicket._id);
+    }
+
+    res.status(201).json({ 
+      message: `Ticket raised successfully and assigned to ${batch.ta.length} TA(s)`, 
+      ticketIds: tickets 
     });
-
-    await newTicket.save();
-
-    res.status(201).json({ message: "Ticket raised successfully", ticketId: newTicket._id });
   } catch (err: any) {
     console.error("Error in raiseTicket:", err.message || err);
     res.status(500).json({ error: "Something went wrong while raising the ticket." });

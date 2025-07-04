@@ -9,45 +9,78 @@ import {
   FiSend,
   FiSun, // For light mode icon
   FiMoon, // For dark mode icon
+  FiUsers, // For enrollments icon
+  FiCheck, // For accept icon
+  FiX, // For decline icon
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from "framer-motion"; // For advanced animations
 import HomePage from "../components/ta/HomePage";
 import FlaggedEvaluationsPage from "../components/ta/FlaggedEvaluationsPage";
 import ManageEnrollments from '../components/ta/ManageEnrollments';
 
-interface FlaggedEvaluation {
-  _id: string;
-  evaluation: {
+// Update TAProfile interface
+interface TAProfile {
+  name: string;
+  email: string;
+  courses: Array<{
     _id: string;
-    evaluatee: {
-      name: string;
-      email: string;
-    };
-    evaluator: {
-      name: string;
-      email: string;
-    };
-    marks: number[];
-    feedback?: string;
-    exam: {
-      title: string;
-      startTime?: string;
-      endTime?: string;
-      numQuestions?: number;
-      course?: {
-        name: string;
-        code: string;
-        startDate?: string;
-        endDate?: string;
-      }
-    }
-  };
-  flaggedBy: {
+    name: string;
+    code: string;
+  }>;
+  batches: Array<{
+    _id: string;
+    name: string;
+  }>;
+}
+
+// Update PendingEnrollment interface
+interface PendingEnrollment {
+  _id: string;
+  student: {
     name: string;
     email: string;
   };
-  reason?: string;
-  resolutionStatus: 'pending' | 'resolved' | 'escalated';
+  course: {
+    _id: string;
+    name: string;
+    code: string;
+  };
+  batch: {
+    _id: string;
+    name: string;
+  };
+  requestDate: string;
+  status: 'pending' | 'approved' | 'rejected';
+}
+
+// Replace FlaggedEvaluation interface with StudentTicket interface
+interface StudentTicket {
+  _id: string;
+  student: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  evaluator: {
+    _id: string;
+    name: string;
+    email: string;
+  };
+  exam: {
+    _id: string;
+    title: string;
+    startTime?: string;
+    endTime?: string;
+    numQuestions?: number;
+    course?: {
+      name: string;
+      code: string;
+    };
+  };
+  message: string;
+  status: 'open' | 'closed';
+  escalatedToTeacher: boolean;
+  createdAt: string;
 }
 
 const PORT = import.meta.env.VITE_BACKEND_PORT || 5000;
@@ -107,13 +140,18 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
   const [updateMarksDialog, setUpdateMarksDialog] = useState<{
     show: boolean;
     id: string | null;
-    evaluation?: any;
+    ticket?: StudentTicket;
   }>({ show: false, id: null });
   const [newMarks, setNewMarks] = useState<number[]>([]);
-  const [flaggedEvaluations, setFlaggedEvaluations] = useState<FlaggedEvaluation[]>([]);
+  // Replace flaggedEvaluations with studentTickets
+  const [studentTickets, setStudentTickets] = useState<StudentTicket[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  
+  // Add new state variables for TA profile and enrollments
+  const [pendingEnrollments, setPendingEnrollments] = useState<PendingEnrollment[]>([]);
+  const [taProfile, setTaProfile] = useState<TAProfile | null>(null);
 
   const token = localStorage.getItem('token');
   const currentPalette = getColors(darkMode); // Get current palette based on dark mode state
@@ -131,13 +169,13 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
     setDarkMode(prevMode => !prevMode);
   };
 
-  // Fetch flagged evaluations from backend
-  const fetchFlaggedEvaluations = async () => {
+  // Replace fetchFlaggedEvaluations with fetchStudentTickets
+  const fetchStudentTickets = async () => {
     setLoading(true);
     setError(null);
 
     try {
-      const response = await fetch(`http://localhost:${PORT}/api/ta/flagged-evaluations`, {
+      const response = await fetch(`http://localhost:${PORT}/api/ta/student-tickets`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
@@ -146,26 +184,102 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to fetch flagged evaluations');
+        throw new Error('Failed to fetch student tickets');
       }
 
       const data = await response.json();
-      setFlaggedEvaluations(data.flaggedEvaluations || []);
+      setStudentTickets(data.tickets || []);
     } catch (err) {
-      console.error('Error fetching flagged evaluations:', err);
-      setError('Failed to load flagged evaluations. Please try again.');
+      console.error('Error fetching student tickets:', err);
+      setError('Failed to load student tickets. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
+  // Add new function to fetch TA profile
+  const fetchTAProfile = async () => {
+    try {
+      const response = await fetch(`http://localhost:${PORT}/api/ta/profile`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch TA profile');
+      }
+
+      const data = await response.json();
+      setTaProfile(data.profile);
+    } catch (err) {
+      console.error('Error fetching TA profile:', err);
+      setError('Failed to load TA profile. Please try again.');
+    }
+  };
+
+  // Add new function to fetch pending enrollments
+  const fetchPendingEnrollments = async () => {
+    try {
+      const response = await fetch(`http://localhost:${PORT}/api/ta/pending-enrollments`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fetch pending enrollments');
+      }
+
+      const data = await response.json();
+      setPendingEnrollments(data.pendingEnrollments || []);
+    } catch (err) {
+      console.error('Error fetching pending enrollments:', err);
+      // Don't show error to avoid cluttering the UI if this is a secondary feature
+    }
+  };
+
+  // Update the useEffect to call our new functions
   useEffect(() => {
-    fetchFlaggedEvaluations();
+    fetchTAProfile();
+    fetchStudentTickets();
+    fetchPendingEnrollments();
   }, [activePage]);
 
-  const handleDownloadTranscript = async (evaluationId: string) => {
+  // Helper function to find evaluation for a ticket
+  const findEvaluationForTicket = async (ticket: StudentTicket) => {
     try {
-      const response = await fetch(`http://localhost:${PORT}/api/ta/submission/${evaluationId}`, {
+      const response = await fetch(`http://localhost:${PORT}/api/ta/evaluation/${ticket.exam._id}/${ticket.evaluator._id}/${ticket.student._id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        return data.evaluation;
+      }
+      return null;
+    } catch (err) {
+      console.error('Error fetching evaluation:', err);
+      return null;
+    }
+  };
+
+  const handleDownloadTranscript = async (ticket: StudentTicket) => {
+    try {
+      // First find the evaluation for this ticket
+      const evaluation = await findEvaluationForTicket(ticket);
+      if (!evaluation) {
+        setError('Could not find evaluation for this ticket');
+        return;
+      }
+
+      const response = await fetch(`http://localhost:${PORT}/api/ta/submission/${evaluation._id}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -179,7 +293,7 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
-      link.download = `submission_${evaluationId}.pdf`;
+      link.download = `submission_${ticket.student.name}_${ticket.exam.title}.pdf`;
 
       document.body.appendChild(link);
       link.click();
@@ -192,16 +306,23 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
     }
   };
 
-  const handleUpdateMarks = async (flagId: string) => {
+  const handleUpdateMarks = async (ticketId: string) => {
     try {
-      const flag = flaggedEvaluations.find(ev => ev._id === flagId);
-      if (!flag) return;
+      const ticket = studentTickets.find(t => t._id === ticketId);
+      if (!ticket) return;
 
-      setNewMarks([...flag.evaluation.marks]);
+      // Get current evaluation marks to pre-fill the form
+      const evaluation = await findEvaluationForTicket(ticket);
+      
+      // Use exam's numQuestions if available, otherwise default to 5
+      const numQuestions = ticket.exam.numQuestions || 5;
+      const currentMarks = evaluation?.marks || Array(numQuestions).fill(0);
+
+      setNewMarks([...currentMarks]);
       setUpdateMarksDialog({
         show: true,
-        id: flagId,
-        evaluation: flag.evaluation
+        id: ticketId,
+        ticket: ticket
       });
     } catch (err) {
       console.error('Error preparing marks update:', err);
@@ -230,7 +351,7 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
         return;
       }
 
-      const response = await fetch(`http://localhost:${PORT}/api/ta/resolve-flag/${updateMarksDialog.id}`, {
+      const response = await fetch(`http://localhost:${PORT}/api/ta/resolve-ticket/${updateMarksDialog.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -250,7 +371,7 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
       setSuccessMessage('Marks updated successfully');
       setTimeout(() => setSuccessMessage(null), 3000);
 
-      fetchFlaggedEvaluations();
+      fetchStudentTickets();
     } catch (err) {
       console.error('Error updating marks:', err);
       setError('Failed to update marks. Please try again.');
@@ -261,8 +382,8 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
     }
   };
 
-  const handleSendToTeacher = (flagId: string) => {
-    setCommentDialog({ show: true, id: flagId });
+  const handleSendToTeacher = (ticketId: string) => {
+    setCommentDialog({ show: true, id: ticketId });
   };
 
   const confirmSendToTeacher = async () => {
@@ -271,7 +392,7 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
     try {
       setLoading(true);
 
-      const response = await fetch(`http://localhost:${PORT}/api/ta/escalate/${commentDialog.id}`, {
+      const response = await fetch(`http://localhost:${PORT}/api/ta/escalate-ticket/${commentDialog.id}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -284,10 +405,10 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
         throw new Error('Failed to escalate to teacher');
       }
 
-      setSuccessMessage('Flag escalated to teacher successfully');
+      setSuccessMessage('Ticket escalated to teacher successfully');
       setTimeout(() => setSuccessMessage(null), 3000);
 
-      fetchFlaggedEvaluations();
+      fetchStudentTickets();
     } catch (err) {
       console.error('Error escalating to teacher:', err);
       setError('Failed to escalate to teacher. Please try again.');
@@ -295,6 +416,38 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
       setLoading(false);
       setCommentDialog({ show: false, id: null });
       setComment('');
+    }
+  };
+
+  // Add function to handle enrollment decisions
+  const handleEnrollmentDecision = async (enrollmentId: string, decision: 'approve' | 'reject') => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const response = await fetch(`http://localhost:${PORT}/api/ta/enrollment/${enrollmentId}/decision`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ decision })
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to ${decision} enrollment`);
+      }
+
+      setSuccessMessage(`Enrollment ${decision === 'approve' ? 'approved' : 'rejected'} successfully`);
+      setTimeout(() => setSuccessMessage(null), 3000);
+
+      // Refresh enrollments after decision
+      fetchPendingEnrollments();
+    } catch (err) {
+      console.error(`Error ${decision}ing enrollment:`, err);
+      setError(`Failed to ${decision} enrollment. Please try again.`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -470,7 +623,7 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
                               />
                           )}
                           <Icon className={`transition-all duration-300 ${showSidebar ? 'mr-3 text-xl' : 'text-3xl'}`} />
-                          {showSidebar && <span className="font-medium whitespace-nowrap">`{label}`</span>}
+                          {showSidebar && <span className="font-medium whitespace-nowrap">{label}</span>}
                       </motion.li>
                   ))}
               </ul>
@@ -547,8 +700,8 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
       {/* Comment Dialog */}
       <AnimatePresence>
           {commentDialog.show && (
-              <DialogBox show={commentDialog.show} message="Add a comment before sending">
-                  <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Write your note here..."
+              <DialogBox show={commentDialog.show} message="Add a comment before escalating">
+                  <textarea value={comment} onChange={e => setComment(e.target.value)} placeholder="Explain why you're escalating this ticket..."
                       className="w-full border rounded-lg p-2 mb-4"
                       style={{
                           backgroundColor: currentPalette['bg-secondary'],
@@ -567,7 +720,7 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
                       <button onClick={confirmSendToTeacher}
                           className={`${commonButtonClasses}`}
                           style={getButtonStyles('accent-purple', 'white')}
-                      >Send</button>
+                      >Escalate</button>
                   </div>
               </DialogBox>
           )}
@@ -603,7 +756,7 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
 
                       <div className="mt-3 text-right">
                           <strong style={{ color: currentPalette['text-dark'] }}>
-                              Total: {newMarks.reduce((sum, mark) => sum + mark, 0)} / {(updateMarksDialog.evaluation?.exam?.numQuestions || newMarks.length) * 20}
+                              Total: {newMarks.reduce((sum, mark) => sum + mark, 0)} / {(updateMarksDialog.ticket?.exam?.numQuestions || newMarks.length) * 20}
                           </strong>
                       </div>
                   </div>
