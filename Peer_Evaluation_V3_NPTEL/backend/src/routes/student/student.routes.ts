@@ -21,7 +21,7 @@ import {
   getBatchesByCourse,
 } from "../../controllers/student/course.controller.ts";
 import { changePassword } from "../../controllers/student/changePassword.controller.ts";
-import { raiseTicket } from "../../controllers/student/raiseTicket.controller.ts";
+import { raiseTicket } from "../../controllers/student/raiseTIcket.controller.ts";
 import {
   createEnrollment,
   getStudentEnrollments,
