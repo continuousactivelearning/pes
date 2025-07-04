@@ -144,6 +144,9 @@ const PeerEvaluationsPending = () => {
     if (answerKeyUrl) URL.revokeObjectURL(answerKeyUrl);
     setPdfUrl(null);
     setAnswerKeyUrl(null);
+    // Open the navbar if it was collapsed
+    const collapseBtn = document.querySelector('button:has(svg.text-2xl)') as HTMLButtonElement;
+    if (collapseBtn) collapseBtn.click();
   };
 
   const handleSubmit = async () => {
@@ -165,6 +168,9 @@ const PeerEvaluationsPending = () => {
       setSubmitStatus("success");
       setPending(prev => prev.filter(ev => ev._id !== openEval._id));
       handleCloseModal();
+      // Open the navbar if it was collapsed
+      const collapseBtn = document.querySelector('button:has(svg.text-2xl)') as HTMLButtonElement;
+      if (collapseBtn) collapseBtn.click();
     } catch {
       setSubmitStatus("error");
     }

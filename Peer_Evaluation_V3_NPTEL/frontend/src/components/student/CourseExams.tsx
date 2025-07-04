@@ -121,6 +121,9 @@ const CourseExams = ({ courseId, onBack }: Props) => {
   const handleViewExam = async (exam: Exam) => {
     setViewingExam(exam);
     setPdfUrl(null);
+    // Collapse the navbar if present
+    const collapseBtn = document.querySelector('button:has(svg.text-2xl)') as HTMLButtonElement;
+    if (collapseBtn) collapseBtn.click();
     try {
       const res = await axios.get(`http://localhost:${PORT}/api/student/question-paper/${exam._id}`, {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` },
@@ -137,6 +140,9 @@ const CourseExams = ({ courseId, onBack }: Props) => {
     setViewingExam(null);
     if (pdfUrl) URL.revokeObjectURL(pdfUrl);
     setPdfUrl(null);
+    // Open the navbar if it was collapsed
+    const collapseBtn = document.querySelector('button:has(svg.text-2xl)') as HTMLButtonElement;
+    if (collapseBtn) collapseBtn.click();
   };
 
   if (isLoading) return <div className="text-center p-4 text-gray-700">Loading exams...</div>;
