@@ -83,7 +83,7 @@ const StudentDashboard = () => {
     const [showSidebar, setShowSidebar] = useState(true);
     const [logoutDialog, setLogoutDialog] = useState(false);
 
-    const [profileData, setProfileData] = useState({ name: "", email: "", role: "" });
+    const [profileData, setProfileData] = useState({ name: "", email: "", role: "", isTA: false });
     const [showProfilePopup, setShowProfilePopup] = useState(false);
 
     const navigate = useNavigate();
@@ -141,7 +141,7 @@ const StudentDashboard = () => {
             navigate('/'); // Redirect to login
             return;
         }
-        fetchData(`http://localhost:${PORT}/api/dashboard/profile`, setProfileData, 'Failed to fetch profile');
+        fetchData(`http://localhost:${PORT}/api/student/profile`, setProfileData, 'Failed to fetch profile');
       }, [token, navigate]);
 
     // Common Tailwind classes for cards and buttons based on the new palette
@@ -346,6 +346,20 @@ const StudentDashboard = () => {
                             >
                                 Go to Profile
                             </button>
+                            {profileData.isTA && (
+                            <button
+                                onClick={() => navigate("/ta")}
+                                className="w-full rounded-3xl px-4 py-2 mt-3"
+                                style={{
+                                backgroundColor: currentPalette['accent-bright-yellow'],
+                                color: '#000',
+                                boxShadow: `0 4px 15px ${currentPalette['accent-bright-yellow']}40`
+                                }}
+                            >
+                                Go to TA Dashboard
+                            </button>
+                            )}
+
                             </div>
                         )}
                         </div>

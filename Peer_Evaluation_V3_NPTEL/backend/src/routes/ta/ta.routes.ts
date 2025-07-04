@@ -8,7 +8,7 @@ import {
   getTAStats
 } from '../../controllers/ta/ta.controller.ts';
 import { authMiddleware } from '../../middlewares/authMiddleware.ts';
-import { authorizeRoles } from '../../middlewares/authorizeRoles.ts';
+import { authorizeTA } from '../../middlewares/authorizeTA.ts'; // <-- NEW middleware
 
 const router = Router();
 
@@ -20,25 +20,15 @@ const asyncHandler = (fn: any) => (req: any, res: any, next: any) => {
 // Apply authentication middleware to all routes
 router.use(asyncHandler(authMiddleware));
 
-// Ensure only TAs can access these routes
-router.use(asyncHandler(authorizeRoles('ta')));
+// ✅ Replace role-based check with our dynamic TA check
+router.use(asyncHandler(authorizeTA));
 
-// Get TA dashboard statistics
+// TA-specific routes
 router.get('/stats', asyncHandler(getTAStats));
-
-// Get all flagged evaluations that need TA review
 router.get('/flagged-evaluations', asyncHandler(getFlaggedEvaluations));
-
-// Get detailed information about a specific evaluation
 router.get('/evaluation/:id', asyncHandler(getEvaluationDetails));
-
-// Get submission PDF for an evaluation
 router.get('/submission/:evaluationId', asyncHandler(getSubmissionPdf));
-
-// Resolve a flagged evaluation
 router.post('/resolve-flag/:flagId', asyncHandler(resolveFlag));
-
-// Escalate a flagged evaluation to a teacher
 router.post('/escalate/:flagId', asyncHandler(escalateToTeacher));
 
 export default router;

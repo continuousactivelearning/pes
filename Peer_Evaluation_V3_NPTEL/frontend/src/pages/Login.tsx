@@ -40,14 +40,18 @@ export default function Login() {
         { withCredentials: true }
       );
 
-      const { token, role } = res.data;
+      const { token, role, user } = res.data;
       localStorage.setItem('token', token);
       localStorage.setItem('role', role);
+      localStorage.setItem('userId', user.id);
+      localStorage.setItem('userName', user.name);
+      localStorage.setItem('userEmail', user.email);
+      localStorage.setItem('isTA', user.isTA ? 'true' : 'false');
 
       if (role === 'admin') navigate('/admin');
       else if (role === 'teacher') navigate('/teacher');
-      else if (role === 'ta') navigate('/ta');
       else navigate('/dashboard');
+
     } catch (err) {
       showMessage('Login failed. Please check your credentials.');
       console.error(err);

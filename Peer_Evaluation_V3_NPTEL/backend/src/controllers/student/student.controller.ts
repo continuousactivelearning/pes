@@ -1,9 +1,8 @@
 import { Request, Response } from 'express';
-
-
+import { Batch } from '../../models/Batch.ts'; // Make sure the path is correct
 
 interface AuthRequest extends Request {
-  user?: any; 
+  user?: any;
 }
 
 export const getStudentProfile = async (req: AuthRequest, res: Response): Promise<void> => {
@@ -15,11 +14,15 @@ export const getStudentProfile = async (req: AuthRequest, res: Response): Promis
       return;
     }
 
+    // Check if the student is a TA in any batch
+    const isTA = await Batch.exists({ ta: student._id });
+
     res.json({
       id: student._id,
       name: student.name,
       email: student.email,
       role: "student",
+      isTA: !!isTA, // Ensures it's a boolean
     });
   } catch (err) {
     console.error(err);

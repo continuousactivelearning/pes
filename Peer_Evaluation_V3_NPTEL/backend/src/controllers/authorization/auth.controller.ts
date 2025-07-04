@@ -84,6 +84,8 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
   }
 };
 
+import { Batch } from '../../models/Batch.ts'; 
+
 export const loginUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const { email, password } = req.body;
@@ -94,11 +96,24 @@ export const loginUser = async (req: Request, res: Response): Promise<void> => {
       return;
     }
 
+    // 🔍 Check if the user is a TA in any batch
+    const isTA = await Batch.exists({ ta: user._id });
+
     const token = jwt.sign({ id: user._id, role: user.role }, JWT_SECRET, {
       expiresIn: '7d',
     });
 
-    res.json({message: "Login successful",token,role: user.role,user: {id: user._id,name: user.name,email: user.email,},});
+    res.json({
+      message: "Login successful",
+      token,
+      role: user.role,
+      isTA: Boolean(isTA),
+      user: {
+        id: user._id,
+        name: user.name,
+        email: user.email,
+      },
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: 'Login failed' });
