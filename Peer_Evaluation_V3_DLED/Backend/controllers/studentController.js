@@ -116,7 +116,7 @@ export const requestEnrollment = async (req, res) => {
       student: studentId,
       batch: batchId,
       course: courseId,
-      status: { $in: ['pending', 'active'] }
+      status: { $in: ['pending', 'active', 'dropped'] }
     });
 
     if (existingEnrollment && existingEnrollment.status === 'active') {
@@ -124,6 +124,9 @@ export const requestEnrollment = async (req, res) => {
     }
     else if (existingEnrollment && existingEnrollment.status === 'pending') {
       return res.status(400).json({ message: 'You have a pending enrollment request for this course!' });
+    }
+    else if (existingEnrollment && existingEnrollment.status === 'dropped') {
+      return res.status(400).json({ message: 'Your enrollment request for this course was already rejected or you have dropped!' });
     }
 
     const newEnrollment = new Enrollment({
@@ -260,7 +263,7 @@ export const getEvaluationsByBatchAndExam = async (req, res) => {
     const evaluations = await PeerEvaluation.find(query)
       .populate({
         path: 'exam',
-        match: { completed: false }
+        match: { flags: false }
       })//, 'name date time duration totalMarks batch') // Include batch in exam population
       .populate('document')//, 'uniqueId documentPath uploadedOn');
 

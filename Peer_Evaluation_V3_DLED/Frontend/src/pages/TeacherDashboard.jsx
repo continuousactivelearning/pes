@@ -478,7 +478,7 @@ export default function TeacherDashboard() {
         showMessage(data.message, 'success');
         await refreshExamsList();
       } else {
-        showMessage(`Failed to flag evaluations: ${data.message}`, 'error');
+        showMessage(data.message, 'error');
       }
     } catch (error) {
       showMessage('An error occurred while flagging evaluations.', 'error');
