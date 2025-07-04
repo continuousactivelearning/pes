@@ -11,7 +11,7 @@ export interface IEnrollment extends Document {
 
 const EnrollmentSchema: Schema = new Schema(
   {
-    studentId: { type: Schema.Types.ObjectId, ref: "Student", required: true },
+    studentId: { type: Schema.Types.ObjectId, ref: "User", required: true },
     courseId: { type: Schema.Types.ObjectId, ref: "Course", required: true },
     batchId: { type: Schema.Types.ObjectId, ref: "Batch", required: true }, 
     enrollmentDate: { type: Date, default: Date.now },

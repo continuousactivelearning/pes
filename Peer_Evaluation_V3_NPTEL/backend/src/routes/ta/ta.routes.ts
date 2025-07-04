@@ -1,14 +1,16 @@
 import { Router } from 'express';
 import {
   getFlaggedEvaluations,
-  getEvaluationDetails,
   resolveFlag,
   escalateToTeacher,
-  getSubmissionPdf,
-  getTAStats
-} from '../../controllers/ta/ta.controller.ts';
+} from '../../controllers/ta/flag.controller.ts';
+import { getSubmissionPdf } from '../../controllers/ta/submission.controller.ts';
+import { getEvaluationDetails as getEvalDetails } from '../../controllers/ta/evaluation.controller.ts';
+import { getTAStats } from '../../controllers/ta/stats.controller.ts';
 import { authMiddleware } from '../../middlewares/authMiddleware.ts';
 import { authorizeTA } from '../../middlewares/authorizeTA.ts'; // <-- NEW middleware
+import { getTAProfile } from '../../controllers/ta/ta.controller.ts';
+import { getPendingEnrollments, respondToEnrollment } from '../../controllers/ta/taEnrollment.controller.ts';
 
 const router = Router();
 
@@ -24,9 +26,14 @@ router.use(asyncHandler(authMiddleware));
 router.use(asyncHandler(authorizeTA));
 
 // TA-specific routes
+router.get('/profile', getTAProfile);
+router.get('/enrollments/pending', asyncHandler(getPendingEnrollments));
+router.post('/enrollments/respond/:enrollmentId', asyncHandler(respondToEnrollment));
+
+
 router.get('/stats', asyncHandler(getTAStats));
 router.get('/flagged-evaluations', asyncHandler(getFlaggedEvaluations));
-router.get('/evaluation/:id', asyncHandler(getEvaluationDetails));
+router.get('/evaluation/:id', asyncHandler(getEvalDetails));
 router.get('/submission/:evaluationId', asyncHandler(getSubmissionPdf));
 router.post('/resolve-flag/:flagId', asyncHandler(resolveFlag));
 router.post('/escalate/:flagId', asyncHandler(escalateToTeacher));

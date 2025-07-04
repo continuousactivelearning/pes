@@ -11,6 +11,9 @@ import {
   FiMoon, // For dark mode icon
 } from 'react-icons/fi';
 import { motion, AnimatePresence } from "framer-motion"; // For advanced animations
+import HomePage from "../components/ta/HomePage";
+import FlaggedEvaluationsPage from "../components/ta/FlaggedEvaluationsPage";
+import ManageEnrollments from '../components/ta/ManageEnrollments';
 
 interface FlaggedEvaluation {
   _id: string;
@@ -90,7 +93,7 @@ const darkPalette = {
     'white': '#FFFFFF',               // Add white for button text
 };
 
-type Palette = typeof lightPalette;
+export type Palette = typeof lightPalette;
 
 const getColors = (isDarkMode: boolean): Palette => isDarkMode ? darkPalette : lightPalette;
 
@@ -310,13 +313,16 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
     px-6 py-2 rounded-lg hover:opacity-90 transition-all duration-200 shadow-md active:scale-95 transform
     focus:outline-none focus:ring-2 focus:ring-offset-2
   `;
-  const getButtonStyles = (colorKey: keyof Palette, textColorKey: keyof Palette = 'text-dark') => ({
-    backgroundColor: currentPalette[colorKey],
-    color: currentPalette[textColorKey],
-    boxShadow: `0 4px 15px ${currentPalette[colorKey]}40`,
-    // @ts-ignore
-    '--tw-ring-color': currentPalette[colorKey] + '50', // For focus ring
-  });
+  const getButtonStyles = (
+  colorKey: keyof Palette,
+  textColorKey: keyof Palette = 'text-dark'
+): React.CSSProperties => ({
+  backgroundColor: currentPalette[colorKey],
+  color: currentPalette[textColorKey],
+  boxShadow: `0 4px 15px ${currentPalette[colorKey]}40`,
+  // @ts-ignore: Tailwind custom ring color fallback
+  '--tw-ring-color': currentPalette[colorKey] + '50',
+});
 
 
   const DialogBox = ({ show, message, children }: { show: boolean, message: string, children?: React.ReactNode }) => {
@@ -353,208 +359,50 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
   const renderContent = () => {
     const pages: Record<string, JSX.Element> = {
       home: (
-        <div className="flex flex-col items-center justify-start w-full h-full pt-10 pb-4">
-          <h1 className="text-4xl font-bold text-center mb-6" style={{ color: currentPalette['text-dark'] }}>
-            Welcome to TA Dashboard
-          </h1>
-
-          {error && (
-            <div className="border text-red-700 px-4 py-3 rounded-lg mb-4 w-full max-w-2xl"
-                 style={{ backgroundColor: currentPalette['accent-pink'] + '10', borderColor: currentPalette['accent-pink'] + '40', color: currentPalette['accent-pink'] + '90' }}>
-              {error}
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="border text-green-700 px-4 py-3 rounded-lg mb-4 w-full max-w-2xl"
-                 style={{ backgroundColor: currentPalette['accent-light-purple'] + '10', borderColor: currentPalette['accent-light-purple'] + '40', color: currentPalette['accent-purple'] + '90' }}>
-              {successMessage}
-            </div>
-          )}
-
-          <div className="mt-10 flex flex-col items-center w-full max-w-2xl">
-            <div className={`border rounded-3xl p-8 w-full shadow flex flex-col items-center`}
-                 style={getCardStyles()}>
-              <h2 className="text-2xl font-bold mb-2" style={{ color: currentPalette['accent-purple'] }}>Flagged Evaluations</h2>
-              {loading ? (
-                <div className="flex justify-center py-6">
-                  <div className="animate-spin rounded-full h-10 w-10 border-b-2" style={{ borderColor: currentPalette['accent-purple'] }}></div>
-                </div>
-              ) : flaggedEvaluations.length === 0 ? (
-                <p className="text-center mb-2" style={{ color: currentPalette['text-muted'] }}>
-                  No flagged evaluations at the moment.
-                </p>
-              ) : (
-                <ul className="w-full">
-                  {flaggedEvaluations.slice(0, 3).map(flag => (
-                    <li key={flag._id} className="mb-2 rounded-xl p-3 shadow text-left"
-                        style={{ backgroundColor: currentPalette['bg-primary'], color: currentPalette['text-dark'], boxShadow: `0 2px 8px ${currentPalette['shadow-light']}` }}>
-                      <div className="flex justify-between">
-                        <span className="font-semibold">{flag.evaluation.evaluatee.name}</span>
-                        <span className="text-sm" style={{ color: currentPalette['accent-pink'] }}>{flag.evaluation.exam.title}</span>
-                      </div>
-                      <p className="text-sm mt-1" style={{ color: currentPalette['text-muted'] }}>{flag.reason || "No reason provided"}</p>
-                      <div className="mt-2 flex justify-end space-x-2">
-                        <button
-                          onClick={() => handleUpdateMarks(flag._id)}
-                          className="text-sm hover:underline flex items-center gap-1"
-                          style={{ color: currentPalette['accent-lilac'] }}
-                        >
-                          <FiEdit size={14} /> Update
-                        </button>
-                        <button
-                          onClick={() => handleSendToTeacher(flag._id)}
-                          className="text-sm hover:underline flex items-center gap-1"
-                          style={{ color: currentPalette['accent-purple'] }}
-                        >
-                          <FiSend size={14} /> Escalate
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              )}
-              {flaggedEvaluations.length > 3 && (
-                <button
-                  onClick={() => setActivePage("flagged")}
-                  className="mt-4 hover:underline"
-                  style={{ color: currentPalette['accent-purple'] }}
-                >
-                  View all ({flaggedEvaluations.length})
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
+        <HomePage
+          flaggedEvaluations={flaggedEvaluations}
+          loading={loading}
+          error={error}
+          successMessage={successMessage}
+          currentPalette={currentPalette}
+          getCardStyles={getCardStyles}
+          handleUpdateMarks={handleUpdateMarks}
+          handleSendToTeacher={handleSendToTeacher}
+          setActivePage={setActivePage}
+        />
       ),
       flagged: (
-        <div className="flex flex-col items-center justify-start w-full h-full pt-10 pb-4">
-          <h2 className="text-3xl font-bold text-center mb-8" style={{ color: currentPalette['accent-purple'] }}>Flagged Evaluations</h2>
+        <FlaggedEvaluationsPage
+          flaggedEvaluations={flaggedEvaluations}
+          loading={loading}
+          error={error}
+          successMessage={successMessage}
+          currentPalette={currentPalette}
+          commonCardClasses={commonCardClasses}
+          getCardStyles={getCardStyles}
+          handleDownloadTranscript={handleDownloadTranscript}
+          handleUpdateMarks={handleUpdateMarks}
+          handleSendToTeacher={handleSendToTeacher}
+        />
+      ),
+      enrollments: (
+      <ManageEnrollments
+        currentPalette={currentPalette}
+        getCardStyles={getCardStyles}
+        getButtonStyles={getButtonStyles}
+      />
+    ),
 
-          {error && (
-            <div className="border px-4 py-3 rounded-lg mb-4 w-full max-w-4xl"
-                 style={{ backgroundColor: currentPalette['accent-pink'] + '10', borderColor: currentPalette['accent-pink'] + '40', color: currentPalette['accent-pink'] + '90' }}>
-              {error}
-            </div>
-          )}
-
-          {successMessage && (
-            <div className="border px-4 py-3 rounded-lg mb-4 w-full max-w-4xl"
-                 style={{ backgroundColor: currentPalette['accent-light-purple'] + '10', borderColor: currentPalette['accent-light-purple'] + '40', color: currentPalette['accent-purple'] + '90' }}>
-              {successMessage}
-            </div>
-          )}
-
-          <div className="w-full max-w-4xl">
-            {loading ? (
-              <div className="flex justify-center py-6">
-                <div className="animate-spin rounded-full h-10 w-10 border-b-2" style={{ borderColor: currentPalette['accent-purple'] }}></div>
-              </div>
-            ) : flaggedEvaluations.length === 0 ? (
-              <p className="text-center" style={{ color: currentPalette['text-muted'] }}>No flagged evaluations at the moment.</p>
-            ) : (
-              <ul className="space-y-4">
-                {flaggedEvaluations.map(flag => (
-                  <li key={flag._id} className={`${commonCardClasses}`} style={getCardStyles()}>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p style={{ color: currentPalette['text-muted'] }}>Student:</p>
-                        <p className="font-semibold" style={{ color: currentPalette['text-dark'] }}>{flag.evaluation.evaluatee.name}</p>
-                        <p className="text-sm" style={{ color: currentPalette['text-muted'] }}>{flag.evaluation.evaluatee.email}</p>
-                      </div>
-                      <div>
-                        <p style={{ color: currentPalette['text-muted'] }}>Evaluator:</p>
-                        <p className="font-semibold" style={{ color: currentPalette['text-dark'] }}>{flag.evaluation.evaluator.name}</p>
-                        <p className="text-sm" style={{ color: currentPalette['text-muted'] }}>{flag.evaluation.evaluator.email}</p>
-                      </div>
-                      <div>
-                        <p style={{ color: currentPalette['text-muted'] }}>Course:</p>
-                        <p className="font-semibold" style={{ color: currentPalette['text-dark'] }}>{flag.evaluation.exam.course?.name || 'N/A'}</p>
-                        <p className="text-sm" style={{ color: currentPalette['text-muted'] }}>
-                          Code: {flag.evaluation.exam.course?.code || 'N/A'}
-                        </p>
-                      </div>
-                      <div>
-                        <p style={{ color: currentPalette['text-muted'] }}>Exam:</p>
-                        <p className="font-semibold" style={{ color: currentPalette['text-dark'] }}>{flag.evaluation.exam.title}</p>
-                        <p className="text-sm" style={{ color: currentPalette['text-muted'] }}>
-                          Questions: {flag.evaluation.exam.numQuestions || 'N/A'}
-                        </p>
-                        {flag.evaluation.exam.startTime && (
-                          <p className="text-sm" style={{ color: currentPalette['text-muted'] }}>
-                            Start: {new Date(flag.evaluation.exam.startTime).toLocaleDateString()}
-                          </p>
-                        )}
-                      </div>
-                      <div>
-                        <p style={{ color: currentPalette['text-muted'] }}>Current Marks:</p>
-                        <div className="mt-1 grid grid-cols-5 gap-1">
-                          {flag.evaluation.marks.map((mark: number, idx: number) => (
-                            <div key={idx} className="rounded-lg p-2 text-center" style={{ backgroundColor: currentPalette['bg-primary'], color: currentPalette['text-dark'] }}>
-                              <div className="text-xs" style={{ color: currentPalette['text-muted'] }}>Q{idx+1}</div>
-                              <div className="font-semibold">{mark}</div>
-                            </div>
-                          ))}
-                        </div>
-                        <div className="mt-2 text-right font-semibold" style={{ color: currentPalette['text-dark'] }}>
-                          Total: {Math.round(flag.evaluation.marks.reduce((sum: number, mark: number) => sum + mark, 0))}
-                          /{flag.evaluation.marks.length * 20}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4">
-                      <p style={{ color: currentPalette['text-muted'] }}>Flag Reason:</p>
-                      <p className="italic p-3 rounded-lg mt-1" style={{ backgroundColor: currentPalette['accent-pink'] + '10', color: currentPalette['text-dark'] }}>{flag.reason || "No reason provided"}</p>
-                    </div>
-
-                    {flag.evaluation.feedback && (
-                      <div className="mt-4">
-                        <p style={{ color: currentPalette['text-muted'] }}>Feedback:</p>
-                        <p className="italic p-3 rounded-lg mt-1" style={{ backgroundColor: currentPalette['accent-light-purple'] + '10', color: currentPalette['text-dark'] }}>{flag.evaluation.feedback}</p>
-                      </div>
-                    )}
-
-                    <div className="mt-6 flex justify-end space-x-4">
-                      <button
-                        onClick={() => handleDownloadTranscript(flag.evaluation._id)}
-                        className="flex items-center gap-2 hover:underline"
-                        style={{ color: currentPalette['accent-lilac'] }}
-                      >
-                        <FiDownload /> Download Submission
-                      </button>
-                      <button
-                        onClick={() => handleUpdateMarks(flag._id)}
-                        className="flex items-center gap-2 hover:underline"
-                        style={{ color: currentPalette['accent-purple'] }}
-                      >
-                        <FiEdit /> Update Marks
-                      </button>
-                      <button
-                        onClick={() => handleSendToTeacher(flag._id)}
-                        className="flex items-center gap-2 hover:underline"
-                        style={{ color: currentPalette['accent-pink'] }}
-                      >
-                        <FiSend /> Send to Teacher
-                      </button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </div>
-      )
     };
     return (
       <AnimatePresence mode="wait">
         <motion.div
-            key={activePage} // Key is crucial for AnimatePresence to detect changes
+            key={activePage}
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.3 }}
-            className="w-full" // Ensure it takes full width within the container
+            className="w-full"
         >
           {pages[activePage]}
         </motion.div>
@@ -594,7 +442,8 @@ const TADashboard = ({ onLogout }: { onLogout?: () => void }) => {
               <ul className="space-y-3 w-full">
                   {[
                       { key: 'home', icon: FiHome, label: 'Dashboard' },
-                      { key: 'flagged', icon: FiShield, label: 'Flagged Evaluations' }
+                      { key: 'flagged', icon: FiShield, label: 'Flagged Evaluations' },
+                      {key: 'enrollments', icon: FiEdit, label: 'Manage Enrollments' },
                   ].map(({ key, icon: Icon, label }) => (
                       <motion.li
                           key={key}
