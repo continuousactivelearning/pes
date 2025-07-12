@@ -1,21 +1,16 @@
-import React, { useState } from "react";
-import { FaTimes } from "react-icons/fa";
+import React from "react";
+import { showRaiseTicketDialog } from "./messageDialogs";
+import { FaTimes, FaFileAlt, FaExclamationTriangle } from "react-icons/fa";
 
 const PeerResultOverlay = ({ 
   isPeerResultOverlayOpen, 
   closePeerResultOverlay, 
   selectedExamForPeerResult, 
-  peerResultsForExam 
+  peerResultsForExam,
+  loadingTickets,
+  setLoadingTickets,
+  handleRaiseTicket
 }) => {
-  const [ticketModal, setTicketModal] = useState(false);
-  const [selectedEvaluation, setSelectedEvaluation] = useState(null);
-  const [ticketData, setTicketData] = useState({
-    reason: '',
-    description: '',
-    priority: 'medium'
-  });
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
   if (!isPeerResultOverlayOpen) return null;
 
   const calculateAverageScore = () => {
@@ -35,70 +30,37 @@ const PeerResultOverlay = ({
     return (totalScore / completedEvaluations.length).toFixed(2);
   };
 
-  const handleRaiseTicket = (evaluation) => {
-    setSelectedEvaluation(evaluation);
-    setTicketModal(true);
-    setTicketData({ reason: '', description: '', priority: 'medium' });
+  const getDocumentUrl = () => {
+    if (peerResultsForExam.length > 0 && peerResultsForExam[0].document) {
+      const doc = peerResultsForExam[0].document;
+      // Adjust this URL based on your backend setup
+      return `http://localhost:5000/${doc.documentPath}`;
+    }
+    return null;
   };
 
-  const submitTicket = async () => {
-    if (!ticketData.reason.trim() || !ticketData.description.trim()) {
-      alert('Please fill in all required fields');
-      return;
+  const documentUrl = getDocumentUrl();
+
+  const handleViewDocument = () => {
+    if (documentUrl) {
+      window.open(documentUrl, '_blank');
     }
+  };
 
-    setIsSubmitting(true);
+  const handleRaiseTicketClick = async (evaluationId) => {
+    const confirmRaise = await showRaiseTicketDialog();
+    
+    if (!confirmRaise) return;
 
+    setLoadingTickets(prev => ({ ...prev, [evaluationId]: true }));
+    
     try {
-      const ticketPayload = {
-        evaluationId: selectedEvaluation.id,
-        evaluatorName: selectedEvaluation.student.name,
-        examId: selectedExamForPeerResult.id,
-        examName: selectedExamForPeerResult.name,
-        reason: ticketData.reason,
-        description: ticketData.description,
-        priority: ticketData.priority,
-        status: 'open',
-        createdAt: new Date().toISOString(),
-        evaluationScore: Array.isArray(selectedEvaluation.score) 
-          ? selectedEvaluation.score.reduce((sum, current) => sum + current, 0)
-          : selectedEvaluation.score || 0,
-        feedback: Array.isArray(selectedEvaluation.feedback)
-          ? selectedEvaluation.feedback.join(", ")
-          : selectedEvaluation.feedback || ""
-      };
-
-      // API call to submit ticket
-      const response = await fetch('/api/tickets/create', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(ticketPayload)
-      });
-
-      if (response.ok) {
-        alert('Ticket raised successfully! You will be notified once it is reviewed.');
-        setTicketModal(false);
-        setSelectedEvaluation(null);
-        setTicketData({ reason: '', description: '', priority: 'medium' });
-      } else {
-        const errorData = await response.json();
-        alert(`Error raising ticket: ${errorData.message || 'Please try again later'}`);
-      }
+      await handleRaiseTicket(evaluationId);
     } catch (error) {
-      console.error('Error submitting ticket:', error);
-      alert('Network error. Please check your connection and try again.');
+      console.error('Error in raise ticket:', error);
     } finally {
-      setIsSubmitting(false);
+      setLoadingTickets(prev => ({ ...prev, [evaluationId]: false }));
     }
-  };
-
-  const closeTicketModal = () => {
-    setTicketModal(false);
-    setSelectedEvaluation(null);
-    setTicketData({ reason: '', description: '', priority: 'medium' });
   };
 
   return (
@@ -153,6 +115,34 @@ const PeerResultOverlay = ({
         >
           <FaTimes style={{ fontSize: "1rem" }} />
         </button>
+
+        <button
+            onClick={handleViewDocument}
+            style={{
+              position: "absolute",
+              top: "1rem",
+              left: "1rem",
+              display: "flex",
+              alignItems: "center",
+              gap: "0.5rem",
+              background: "#4b3c70",
+              border: "none",
+              color: "#fff",
+              padding: "0.8rem 1rem",
+              borderRadius: "8px",
+              cursor: "pointer",
+              fontSize: "0.9rem",
+              fontWeight: 500,
+              transition: "background 0.2s",
+              zIndex: 10,
+            }}
+            onMouseEnter={(e) => e.target.style.background = "#3a2d5c"}
+            onMouseLeave={(e) => e.target.style.background = "#4b3c70"}
+            title="View Your Submitted File"
+          >
+            <FaFileAlt style={{ fontSize: "1.1rem" }} />
+            View Document
+          </button>
 
         {/* Header Section */}
         <div
@@ -280,26 +270,53 @@ const PeerResultOverlay = ({
                           : result.score || 0}
                       </td>
                       <td style={{ ...tdCellStyle }}>
-                        <button
-                          style={{
-                            padding: "0.5rem 1rem",
-                            backgroundColor: "#ff6b6b",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "5px",
-                            cursor: "pointer",
-                            fontSize: "0.8rem",
-                            fontWeight: "600",
-                            transition: "background-color 0.2s",
-                          }}
-                          onMouseOver={(e) => e.target.style.backgroundColor = "#ff5252"}
-                          onMouseOut={(e) => e.target.style.backgroundColor = "#ff6b6b"}
-                          onClick={() => {
-                            handleRaiseTicket(result);
-                          }}
-                        >
-                          Raise Ticket
-                        </button>
+                        <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap" }}>
+                          {result.ticket === 1 ? (
+                            <span style={{
+                              padding: "0.3rem 0.6rem",
+                              borderRadius: "12px",
+                              fontSize: "0.75rem",
+                              fontWeight: 600,
+                              backgroundColor: "#fff3cd",
+                              color: "#856404",
+                              border: "1px solid #ffeaa7"
+                            }}>
+                              Ticket Raised
+                            </span>
+                          ) : (
+                            <button
+                              onClick={() => handleRaiseTicketClick(result._id)}
+                              disabled={loadingTickets[result._id]}
+                              style={{
+                                background: "#ff6b6b",
+                                border: "none",
+                                color: "#fff",
+                                padding: "0.4rem 0.6rem",
+                                borderRadius: "4px",
+                                cursor: loadingTickets[result._id] ? "not-allowed" : "pointer",
+                                fontSize: "0.75rem",
+                                display: "flex",
+                                alignItems: "center",
+                                gap: "0.3rem",
+                                opacity: loadingTickets[result._id] ? 0.6 : 1,
+                              }}
+                              onMouseEnter={(e) => {
+                                if (!loadingTickets[result._id]) {
+                                  e.target.style.background = "#ff5252";
+                                }
+                              }}
+                              onMouseLeave={(e) => {
+                                if (!loadingTickets[result._id]) {
+                                  e.target.style.background = "#ff6b6b";
+                                }
+                              }}
+                              title="Raise a ticket for this evaluation"
+                            >
+                              <FaExclamationTriangle />
+                              {loadingTickets[result._id] ? "Raising..." : "Raise Ticket"}
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -343,210 +360,6 @@ const PeerResultOverlay = ({
           </div>
         </div>
       </div>
-
-      {/* Ticket Modal */}
-      {ticketModal && (
-        <div
-          style={{
-            position: "fixed",
-            top: 0,
-            left: 0,
-            width: "100vw",
-            height: "100vh",
-            background: "rgba(0, 0, 0, 0.7)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            zIndex: 1002,
-          }}
-          onClick={closeTicketModal}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{
-              background: "#fff",
-              padding: "2rem",
-              borderRadius: "12px",
-              boxShadow: "0 8px 24px rgba(0, 0, 0, 0.3)",
-              width: "90%",
-              maxWidth: "600px",
-              maxHeight: "80vh",
-              overflowY: "auto",
-              position: "relative",
-            }}
-          >
-            <button
-              onClick={closeTicketModal}
-              style={{
-                position: "absolute",
-                top: "1rem",
-                right: "1rem",
-                background: "none",
-                border: "none",
-                fontSize: "1.5rem",
-                cursor: "pointer",
-                color: "#666",
-              }}
-            >
-              <FaTimes />
-            </button>
-
-            <h3 style={{ marginBottom: "1.5rem", color: "#4b3c70" }}>
-              Raise Ticket for Evaluation
-            </h3>
-
-            {selectedEvaluation && (
-              <div style={{ 
-                marginBottom: "1.5rem", 
-                padding: "1rem", 
-                backgroundColor: "#f8f9fa", 
-                borderRadius: "8px",
-                border: "1px solid #e9ecef"
-              }}>
-                <h4 style={{ margin: "0 0 0.5rem 0", color: "#4b3c70" }}>Evaluation Details:</h4>
-                <p style={{ margin: "0.25rem 0", fontSize: "0.9rem" }}>
-                  <strong>Evaluator:</strong> {selectedEvaluation.student.name}
-                </p>
-                <p style={{ margin: "0.25rem 0", fontSize: "0.9rem" }}>
-                  <strong>Score:</strong> {Array.isArray(selectedEvaluation.score) 
-                    ? selectedEvaluation.score.reduce((sum, current) => sum + current, 0)
-                    : selectedEvaluation.score || 0}
-                </p>
-                <p style={{ margin: "0.25rem 0", fontSize: "0.9rem" }}>
-                  <strong>Status:</strong> {selectedEvaluation.eval_status || 'pending'}
-                </p>
-              </div>
-            )}
-
-            <div style={{ marginBottom: "1rem" }}>
-              <label style={{ 
-                display: "block", 
-                marginBottom: "0.5rem", 
-                fontWeight: "600", 
-                color: "#4b3c70" 
-              }}>
-                Reason for Ticket *
-              </label>
-              <select
-                value={ticketData.reason}
-                onChange={(e) => setTicketData({...ticketData, reason: e.target.value})}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "2px solid #e1e5e9",
-                  borderRadius: "8px",
-                  fontSize: "1rem",
-                  color: "#4b3c70",
-                }}
-              >
-                <option value="">Select a reason</option>
-                <option value="unfair_scoring">Unfair Scoring</option>
-                <option value="bias_evaluation">Biased Evaluation</option>
-                <option value="incomplete_feedback">Incomplete Feedback</option>
-                <option value="technical_issue">Technical Issue</option>
-                <option value="evaluation_error">Evaluation Error</option>
-                <option value="other">Other</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: "1rem" }}>
-              <label style={{ 
-                display: "block", 
-                marginBottom: "0.5rem", 
-                fontWeight: "600", 
-                color: "#4b3c70" 
-              }}>
-                Priority Level
-              </label>
-              <select
-                value={ticketData.priority}
-                onChange={(e) => setTicketData({...ticketData, priority: e.target.value})}
-                style={{
-                  width: "100%",
-                  padding: "0.75rem",
-                  border: "2px solid #e1e5e9",
-                  borderRadius: "8px",
-                  fontSize: "1rem",
-                  color: "#4b3c70",
-                }}
-              >
-                <option value="low">Low</option>
-                <option value="medium">Medium</option>
-                <option value="high">High</option>
-                <option value="urgent">Urgent</option>
-              </select>
-            </div>
-
-            <div style={{ marginBottom: "1.5rem" }}>
-              <label style={{ 
-                display: "block", 
-                marginBottom: "0.5rem", 
-                fontWeight: "600", 
-                color: "#4b3c70" 
-              }}>
-                Detailed Description *
-              </label>
-              <textarea
-                value={ticketData.description}
-                onChange={(e) => setTicketData({...ticketData, description: e.target.value})}
-                placeholder="Please provide a detailed explanation of your concern..."
-                style={{
-                  width: "100%",
-                  minHeight: "120px",
-                  padding: "0.75rem",
-                  border: "2px solid #e1e5e9",
-                  borderRadius: "8px",
-                  fontSize: "1rem",
-                  color: "#4b3c70",
-                  resize: "vertical",
-                }}
-              />
-            </div>
-
-            <div style={{ 
-              display: "flex", 
-              gap: "1rem", 
-              justifyContent: "flex-end" 
-            }}>
-              <button
-                onClick={closeTicketModal}
-                disabled={isSubmitting}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  border: "2px solid #6c757d",
-                  borderRadius: "8px",
-                  background: "white",
-                  color: "#6c757d",
-                  fontSize: "1rem",
-                  fontWeight: "600",
-                  cursor: isSubmitting ? "not-allowed" : "pointer",
-                  opacity: isSubmitting ? 0.6 : 1,
-                }}
-              >
-                Cancel
-              </button>
-              <button
-                onClick={submitTicket}
-                disabled={isSubmitting || !ticketData.reason.trim() || !ticketData.description.trim()}
-                style={{
-                  padding: "0.75rem 1.5rem",
-                  border: "none",
-                  borderRadius: "8px",
-                  background: isSubmitting || !ticketData.reason.trim() || !ticketData.description.trim() 
-                    ? "#cccccc" : "#4b3c70",
-                  color: "white",
-                  fontSize: "1rem",
-                  fontWeight: "600",
-                  cursor: isSubmitting || !ticketData.reason.trim() || !ticketData.description.trim() 
-                    ? "not-allowed" : "pointer",
-                }}
-              >
-                {isSubmitting ? "Submitting..." : "Submit Ticket"}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
