@@ -433,9 +433,29 @@ export const getPeerResultsEvaluations = async (req, res) => {
       student: userId
     }).populate('document')
     .populate('evaluator')
-    .populate('student');
-  
-    res.json(peerEvaluations);
+    .populate('student')
+    .populate('evaluated_by');
+
+    const evaluationIds = peerEvaluations.map(evaluation => evaluation._id);
+
+    const tickets = await Ticket.find({ evaluation: { $in: evaluationIds } });
+
+    const ticketMap = {};
+    tickets.forEach(ticket => {
+      ticketMap[ticket.evaluation.toString()] = ticket;
+    });
+
+    const evaluationsWithTickets = peerEvaluations.map(evaluation => {
+      const evalObj = evaluation.toObject();
+      const userTicket = ticketMap[evaluation._id.toString()];
+      
+      evalObj.userHasRaisedTicket = !!userTicket;
+      evalObj.userTicket = userTicket || null;
+      
+      return evalObj;
+    });
+
+    res.json(evaluationsWithTickets);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch peer evaluations.' });
   }
@@ -455,12 +475,24 @@ export const raiseTicket = async (req, res) => {
       return res.status(400).json({ message: 'Ticket already raised for this evaluation!' });
     }
 
-    
+    const existingTicket = await Ticket.findOne({
+      evaluation: evaluationId,
+      raisedBy: userId
+    });
 
-    evaluation.ticket = 1;
-    // evaluation.ticketRaisedBy = userId;
-    // evaluation.ticketRaisedOn = new Date();
+    if (existingTicket) {
+      return res.status(409).json({ message: 'You have already raised a ticket for this evaluation and has been resolved!' }); 
+    }
+
+    const newTicket = new Ticket({
+      evaluation: evaluationId,
+      evaluatedBy: evaluation.evaluated_by || evaluation.evaluator,
+      raisedBy: userId
+    });
     
+    await newTicket.save();
+    
+    evaluation.ticket = 1;    
     await evaluation.save();
 
     res.status(200).json({ message: 'Ticket raised successfully!' });

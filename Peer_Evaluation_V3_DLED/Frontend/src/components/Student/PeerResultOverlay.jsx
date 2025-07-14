@@ -271,17 +271,29 @@ const PeerResultOverlay = ({
                       </td>
                       <td style={{ ...tdCellStyle }}>
                         <div style={{ display: "flex", gap: "0.5rem", justifyContent: "center", flexWrap: "wrap" }}>
-                          {result.ticket === 1 ? (
+                          {(result.ticket === 1 || result.ticket === 2) && result.userHasRaisedTicket ? (
                             <span style={{
                               padding: "0.3rem 0.6rem",
                               borderRadius: "12px",
                               fontSize: "0.75rem",
-                              fontWeight: 600,
+                              fontWeight: "bold",
                               backgroundColor: "#fff3cd",
-                              color: "#856404",
-                              border: "1px solid #ffeaa7"
+                              color: "#FFA500",
+                              border: "1px solid #FFA500"
                             }}>
                               Ticket Raised
+                            </span>
+                          ) : result.ticket === 0 && result.userHasRaisedTicket ? (
+                            <span style={{
+                              padding: "0.3rem 0.6rem",
+                              borderRadius: "12px",
+                              fontSize: "0.75rem",
+                              fontWeight: "bold",
+                              backgroundColor: " #C8E6C9",
+                              color: "#43a047",
+                              border: "1px solid #43a047"
+                            }}>
+                              Ticket Resolved
                             </span>
                           ) : (
                             <button
@@ -354,7 +366,7 @@ const PeerResultOverlay = ({
 
             <div style={{ flex: 1, textAlign: "right" }}>
               <label style={{ fontWeight: "bold", color: "#4b3c70" }}>
-                Total Avg. Scored Marks: {calculateAverageScore()}
+                Avg. Scored Marks: {calculateAverageScore()}
               </label>
             </div>
           </div>

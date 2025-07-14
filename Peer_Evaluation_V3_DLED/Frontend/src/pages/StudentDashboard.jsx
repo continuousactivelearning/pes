@@ -686,6 +686,8 @@ export default function StudentDashboard() {
         if (selectedExamForPeerResult) {
           handleViewPeerResults(selectedExamForPeerResult);
         }
+      } else if (response.status === 409) {
+        showMessage(data.message, 'info');
       } else {
         showMessage(data.message, 'error');
       }

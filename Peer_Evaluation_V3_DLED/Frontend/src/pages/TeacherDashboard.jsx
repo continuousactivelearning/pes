@@ -12,6 +12,7 @@ import EditExamOverlay from '../components/Teacher/EditExamOverlay.jsx';
 import ExamList from '../components/Teacher/ExamList.jsx';
 import { showSendEvaluationDialog, showFlagEvaluationsDialog, showMarkAsDoneDialog, showDeleteExamDialog } from '../components/Teacher/messageDialogs.jsx';
 import BulkUploadOverlay from '../components/Teacher/BulkUploadOverlay.jsx';
+import FlaggedEvaluationsOverlay from '../components/Teacher/FlaggedEvaluationsOverlay.jsx';
 
 export default function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState('home');
@@ -29,8 +30,10 @@ export default function TeacherDashboard() {
   const navigate = useNavigate();
   const [isEditExamOverlayOpen, setEditExamOverlayOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
-  const [bulkUploadOverlayOpen, setBulkUploadOverlayOpen] = useState(false); // State for bulk upload overlay
-  const [selectedExamForBulkUpload, setSelectedExamForBulkUpload] = useState(null); // State for selected exam
+  const [bulkUploadOverlayOpen, setBulkUploadOverlayOpen] = useState(false);
+  const [selectedExamForBulkUpload, setSelectedExamForBulkUpload] = useState(null);
+  const [flaggedEvaluationsOverlayOpen, setFlaggedEvaluationsOverlayOpen] = useState(false);
+  const [flaggedEvaluationsForOverlay, setFlaggedEvaluationsForOverlay] = useState([]);
   const { setRefreshApp } = useContext(AppContext);
 
   useEffect(() => {
@@ -538,9 +541,23 @@ export default function TeacherDashboard() {
   };
 
   // Implement handle viewing evaluations for an exam
-  const handleViewEvaluations = (examId) => {
-    // navigate(`/teacher/exam-evaluations/${examId}`);
-    showMessage(`Viewing evaluations for exam ID: ${examId}`);
+  const handleViewEvaluations = async (examId) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(`http://localhost:5000/api/teacher/flagged-evaluations/${examId}`, {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok && Array.isArray(data)) {
+        setFlaggedEvaluationsForOverlay(data);
+        setFlaggedEvaluationsOverlayOpen(true);
+      } else {
+        showMessage('No evaluations found!', 'info');
+      }
+    } catch (error) {
+      showMessage('Failed to fetch flagged evaluations.', 'error');
+    }
   };
 
   return (
@@ -983,6 +1000,14 @@ export default function TeacherDashboard() {
           examId={selectedExamForBulkUpload} // Pass the selected exam ID
           onClose={handleBulkUploadOverlayClose} // Close handler
           onUpload={handleBulkUpload} // Upload handler
+        />
+      )}
+
+      {flaggedEvaluationsOverlayOpen && (
+        <FlaggedEvaluationsOverlay
+          isOpen={flaggedEvaluationsOverlayOpen}
+          onClose={() => setFlaggedEvaluationsOverlayOpen(false)}
+          evaluations={flaggedEvaluationsForOverlay}
         />
       )}
     </div>
