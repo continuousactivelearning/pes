@@ -814,3 +814,19 @@ export const flagEvaluations = async (req, res) => {
     res.status(500).json({ message: 'Failed to flag evaluations!' });
   }
 };
+
+export const getFlaggedEvaluationsForExam = async (req, res) => {
+  const { examId } = req.params;
+
+  try {
+    const flaggedEvaluations = await PeerEvaluation.find({
+      exam: examId,
+      ticket: 2
+    }).populate('student evaluator document');
+
+    res.status(200).json(flaggedEvaluations);
+  } catch (error) {
+    console.error('Error fetching flagged evaluations:', error);
+    res.status(500).json({ message: 'Failed to fetch flagged evaluations!' });
+  }
+};

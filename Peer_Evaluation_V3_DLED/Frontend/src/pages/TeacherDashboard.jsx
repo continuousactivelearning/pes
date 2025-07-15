@@ -13,6 +13,7 @@ import ExamList from '../components/Teacher/ExamList.jsx';
 import { showSendEvaluationDialog, showFlagEvaluationsDialog, showMarkAsDoneDialog, showDeleteExamDialog } from '../components/Teacher/messageDialogs.jsx';
 import BulkUploadOverlay from '../components/Teacher/BulkUploadOverlay.jsx';
 import FlaggedEvaluationsOverlay from '../components/Teacher/FlaggedEvaluationsOverlay.jsx';
+import TeacherEditEvalOverlay from '../components/Teacher/TeacherEditEvalOverlay.jsx';
 
 export default function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState('home');
@@ -34,6 +35,8 @@ export default function TeacherDashboard() {
   const [selectedExamForBulkUpload, setSelectedExamForBulkUpload] = useState(null);
   const [flaggedEvaluationsOverlayOpen, setFlaggedEvaluationsOverlayOpen] = useState(false);
   const [flaggedEvaluationsForOverlay, setFlaggedEvaluationsForOverlay] = useState([]);
+  const [editEvaluationOverlayOpen, setEditEvaluationOverlayOpen] = useState(false);
+  const [selectedEvaluation, setSelectedEvaluation] = useState(null);
   const { setRefreshApp } = useContext(AppContext);
 
   useEffect(() => {
@@ -540,7 +543,6 @@ export default function TeacherDashboard() {
     }
   };
 
-  // Implement handle viewing evaluations for an exam
   const handleViewEvaluations = async (examId) => {
     try {
       const token = localStorage.getItem('token');
@@ -557,6 +559,46 @@ export default function TeacherDashboard() {
       }
     } catch (error) {
       showMessage('Failed to fetch flagged evaluations.', 'error');
+    }
+  };
+
+  const handleEditEvaluationOverlayOpen = (evaluation) => {
+    setSelectedEvaluation(evaluation);
+    setEditEvaluationOverlayOpen(true);
+  };
+
+  const handleEditEvaluationOverlayClose = () => {
+    setEditEvaluationOverlayOpen(false);
+    setSelectedEvaluation(null);
+  };
+
+  const handleEvaluationUpdate = async (updateData) => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `http://localhost:5000/api/teacher/update-evaluation/${updateData.evaluationId}`,
+        {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            score: updateData.score,
+            feedback: updateData.feedback,
+          }),
+        }
+      );
+      const result = await response.json();
+      if (response.ok) {
+        showMessage('Evaluation updated successfully!', 'success');
+        handleEditEvaluationOverlayClose();
+        // Optionally refresh flagged evaluations here
+      } else {
+        showMessage(result.message || 'Failed to update evaluation.', 'error');
+      }
+    } catch (error) {
+      showMessage('An error occurred while updating evaluation.', 'error');
     }
   };
 
@@ -587,7 +629,7 @@ export default function TeacherDashboard() {
         position: 'fixed',
         top: 24,
         right: 36,
-        zIndex: 2000,
+        zIndex: 1000,
         display: 'flex',
         alignItems: 'center',
       }}>
@@ -1005,9 +1047,19 @@ export default function TeacherDashboard() {
 
       {flaggedEvaluationsOverlayOpen && (
         <FlaggedEvaluationsOverlay
-          isOpen={flaggedEvaluationsOverlayOpen}
-          onClose={() => setFlaggedEvaluationsOverlayOpen(false)}
-          evaluations={flaggedEvaluationsForOverlay}
+          flaggedEvaluationsOverlayOpen={flaggedEvaluationsOverlayOpen}
+          flaggedEvaluationsOverlayClose={() => setFlaggedEvaluationsOverlayOpen(false)}
+          flaggedEvaluations={flaggedEvaluationsForOverlay}
+          handleEditEvaluationOverlayOpen={handleEditEvaluationOverlayOpen}
+        />
+      )}
+
+      {editEvaluationOverlayOpen && selectedEvaluation && (
+        <TeacherEditEvalOverlay
+          isEditOverlayOpen={editEvaluationOverlayOpen}
+          selectedEvaluation={selectedEvaluation}
+          closeEditOverlay={handleEditEvaluationOverlayClose}
+          handleEvaluationUpdate={handleEvaluationUpdate}
         />
       )}
     </div>
