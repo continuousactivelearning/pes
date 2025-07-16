@@ -49,8 +49,10 @@ const TeacherEditEvalOverlay = ({
 
     const updateData = {
       evaluationId: selectedEvaluation._id,
+      exam: selectedEvaluation.exam._id,
       score: formData.scores,
       feedback: formData.feedbacks,
+      ticket: 0,
     };
 
     handleEvaluationUpdate(updateData);

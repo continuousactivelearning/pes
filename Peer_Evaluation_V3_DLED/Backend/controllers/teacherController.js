@@ -691,7 +691,6 @@ export const sendEvaluation = async (req, res) => {
 // TODO: Test the logic to flag evaluations on large number of evaluations
 export const flagEvaluations = async (req, res) => {
   const { examId } = req.params; 
-  console.log('Flagging evaluations for exam ID:', examId);
 
   if (!examId) {
     return res.status(400).json({ message: 'Exam ID is required!' });
@@ -701,7 +700,6 @@ export const flagEvaluations = async (req, res) => {
   if (!exam) {
     return res.status(404).json({ message: 'Exam not found!' });
   }
-  console.log('Exam found:', exam);
 
   try {
     const evaluations = await PeerEvaluation.find({ 
@@ -822,11 +820,53 @@ export const getFlaggedEvaluationsForExam = async (req, res) => {
     const flaggedEvaluations = await PeerEvaluation.find({
       exam: examId,
       ticket: 2
-    }).populate('student evaluator document');
+    }).populate('exam student evaluator document');
 
     res.status(200).json(flaggedEvaluations);
   } catch (error) {
-    console.error('Error fetching flagged evaluations:', error);
     res.status(500).json({ message: 'Failed to fetch flagged evaluations!' });
+  }
+};
+
+export const updateEvaluation = async (req, res) => {
+  const { evaluationId } = req.params;
+  const updateData = req.body;
+
+  try {
+    const updatedFields = {
+      ...updateData,
+      evaluated_on: new Date(),
+      evaluated_by: req.user._id,
+    };
+    
+    const updatedEvaluation = await PeerEvaluation.findByIdAndUpdate(evaluationId, updatedFields, { new: true });
+
+    if (!updatedEvaluation) {
+      return res.status(404).json({ message: 'Evaluation not found!' });
+    }
+
+    res.status(200).json({message: 'Evaluation updated/resolved successfully!'});
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to update evaluation!' });
+  }
+};
+
+export const removeTicket = async (req, res) => {
+  const { evaluationId } = req.params;
+
+  try {
+    const evaluation = await PeerEvaluation.findById(evaluationId);
+    
+    if (!evaluation) {
+      return res.status(404).json({ message: 'Evaluation not found!' });
+    }
+
+    evaluation.ticket = 0;
+    await evaluation.save();
+
+    res.status(200).json({ message: 'Ticket removed successfully!' });
+  } catch (error) {
+    console.error('Error removing ticket:', error);
+    res.status(500).json({ message: 'Failed to remove ticket!' });
   }
 };

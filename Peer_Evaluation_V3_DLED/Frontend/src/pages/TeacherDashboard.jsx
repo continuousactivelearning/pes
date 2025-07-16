@@ -14,6 +14,7 @@ import { showSendEvaluationDialog, showFlagEvaluationsDialog, showMarkAsDoneDial
 import BulkUploadOverlay from '../components/Teacher/BulkUploadOverlay.jsx';
 import FlaggedEvaluationsOverlay from '../components/Teacher/FlaggedEvaluationsOverlay.jsx';
 import TeacherEditEvalOverlay from '../components/Teacher/TeacherEditEvalOverlay.jsx';
+import ResultsOverlay from '../components/Teacher/ResultsOverlay.jsx';
 
 export default function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState('home');
@@ -24,10 +25,10 @@ export default function TeacherDashboard() {
   const [filteredBatches, setFilteredBatches] = useState([]);
   const [selectedBatchId, setSelectedBatchId] = useState('');
   const [examOverlayOpen, setExamOverlayOpen] = useState(false);
-  const [enrollOverlayOpen, setEnrollOverlayOpen] = useState(false); // State for enroll students overlay
+  const [enrollOverlayOpen, setEnrollOverlayOpen] = useState(false);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedBatch, setSelectedBatch] = useState(null);
-  const [exams, setExams] = useState([]); // State to manage exams
+  const [exams, setExams] = useState([]);
   const navigate = useNavigate();
   const [isEditExamOverlayOpen, setEditExamOverlayOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
@@ -37,6 +38,8 @@ export default function TeacherDashboard() {
   const [flaggedEvaluationsForOverlay, setFlaggedEvaluationsForOverlay] = useState([]);
   const [editEvaluationOverlayOpen, setEditEvaluationOverlayOpen] = useState(false);
   const [selectedEvaluation, setSelectedEvaluation] = useState(null);
+  const [resultsOverlayOpen, setResultsOverlayOpen] = useState(false);
+  const [selectedExamForResults, setSelectedExamForResults] = useState(null);
   const { setRefreshApp } = useContext(AppContext);
 
   useEffect(() => {
@@ -575,8 +578,7 @@ export default function TeacherDashboard() {
   const handleEvaluationUpdate = async (updateData) => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(
-        `http://localhost:5000/api/teacher/update-evaluation/${updateData.evaluationId}`,
+      const response = await fetch(`http://localhost:5000/api/teacher/update-evaluation/${updateData.evaluationId}`,
         {
           method: 'PUT',
           headers: {
@@ -586,20 +588,65 @@ export default function TeacherDashboard() {
           body: JSON.stringify({
             score: updateData.score,
             feedback: updateData.feedback,
+            ticket: updateData.ticket || 0,
           }),
         }
       );
-      const result = await response.json();
+      const data = await response.json();
       if (response.ok) {
-        showMessage('Evaluation updated successfully!', 'success');
+        showMessage(data.message, 'success');
         handleEditEvaluationOverlayClose();
-        // Optionally refresh flagged evaluations here
+        handleViewEvaluations(updateData.exam);
       } else {
-        showMessage(result.message || 'Failed to update evaluation.', 'error');
+        showMessage(data.message || 'Failed to update evaluation.', 'error');
       }
     } catch (error) {
-      showMessage('An error occurred while updating evaluation.', 'error');
+      showMessage(error.message || 'An error occurred while updating evaluation!', 'error');
     }
+  };
+
+  const handleEvaluationFlagRemove = async (evaluation, examId) => {
+    try {
+      const token = localStorage.getItem('token');
+
+      const response = await fetch(`http://localhost:5000/api/teacher/remove-ticket/${evaluation}`, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      const data = await response.json();
+      if (response.ok) {
+        showMessage(data.message, 'success');
+        handleViewEvaluations(examId);
+      } else {
+        showMessage(data.message || 'Failed to remove flag from evaluation.', 'error');
+      }
+    } catch (error) {
+      showMessage('An error occurred while removing flag from evaluation.', 'error');
+    }
+  };
+
+  const handleViewResults = async (examId) => {
+    setSelectedExamForResults(examId);
+    setResultsOverlayOpen(true);
+    // try {
+    //   const token = localStorage.getItem('token');
+    //   const response = await fetch(`http://localhost:5000/api/teacher/view-results/${examId}`, {
+    //     method: 'GET',
+    //     headers: { Authorization: `Bearer ${token}` },
+    //   });
+    //   const data = await response.json();
+    //   if (response.ok) {
+    //     setResults(data);
+    //     setResultsOverlayOpen(true);
+    //   } else {
+    //     showMessage(data.message || 'Failed to fetch results.', 'error');
+    //   }
+    // } catch (error) {
+    //   showMessage('An error occurred while fetching results!', 'error');
+    // }
   };
 
   return (
@@ -1002,6 +1049,7 @@ export default function TeacherDashboard() {
                 handleMarkAsDone={handleMarkAsDone}
                 handleDeleteExam={handleDeleteExam}
                 handleViewEvaluations={handleViewEvaluations}
+                handleViewResults={handleViewResults}
               />
             </div>
           )}
@@ -1024,7 +1072,7 @@ export default function TeacherDashboard() {
         onSubmit={handleEnrollStudents}
         course={selectedCourse}
         batch={selectedBatch}
-        closeOnOutsideClick={true} // Added prop to enable closing on outside click
+        closeOnOutsideClick={true}
       />
 
       {/* EditExamOverlay */}
@@ -1039,9 +1087,9 @@ export default function TeacherDashboard() {
 
       {bulkUploadOverlayOpen && (
         <BulkUploadOverlay
-          examId={selectedExamForBulkUpload} // Pass the selected exam ID
-          onClose={handleBulkUploadOverlayClose} // Close handler
-          onUpload={handleBulkUpload} // Upload handler
+          examId={selectedExamForBulkUpload} 
+          onClose={handleBulkUploadOverlayClose} 
+          onUpload={handleBulkUpload} 
         />
       )}
 
@@ -1051,6 +1099,7 @@ export default function TeacherDashboard() {
           flaggedEvaluationsOverlayClose={() => setFlaggedEvaluationsOverlayOpen(false)}
           flaggedEvaluations={flaggedEvaluationsForOverlay}
           handleEditEvaluationOverlayOpen={handleEditEvaluationOverlayOpen}
+          handleEvaluationFlagRemove={handleEvaluationFlagRemove}
         />
       )}
 
@@ -1062,6 +1111,15 @@ export default function TeacherDashboard() {
           handleEvaluationUpdate={handleEvaluationUpdate}
         />
       )}
+
+      {resultsOverlayOpen && selectedExamForResults && (
+        <ResultsOverlay
+          resultsOverlayOpen={resultsOverlayOpen}
+          selectedExamForResults={selectedExamForResults}
+          resultsOverlayClose={() => setResultsOverlayOpen(false)}
+        />
+      )}
+
     </div>
   );
 }

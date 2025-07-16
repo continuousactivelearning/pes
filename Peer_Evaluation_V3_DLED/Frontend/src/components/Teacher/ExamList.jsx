@@ -1,7 +1,7 @@
 import React from 'react';
-import { FaEdit, FaDownload, FaUpload, FaPaperPlane, FaTrashAlt, FaCheck, FaEye, FaFlag } from 'react-icons/fa';
+import { FaEdit, FaDownload, FaUpload, FaPaperPlane, FaTrashAlt, FaCheck, FaEye, FaFlag, FaChartBar } from 'react-icons/fa';
 
-const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadClick, handleSendEvaluation, handleFlagEvaluations, handleMarkAsDone, handleDeleteExam, handleViewEvaluations }) => {
+const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadClick, handleSendEvaluation, handleFlagEvaluations, handleMarkAsDone, handleDeleteExam, handleViewEvaluations, handleViewResults }) => {
   return (
     <div style={{ marginTop: '2rem', maxHeight: '350px', border: '1px solid #ddd', borderRadius: '12px' }}>
       <h3 style={{ color: '#3f3d56', fontWeight: 'bold', marginBottom: '1rem' }}>Exams</h3>
@@ -209,6 +209,22 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                             >
                               <FaEye style={{ color: ' #007bff', fontSize: '1.2rem' }} />
                             </button>
+
+                            <button
+                              onClick={() => handleViewResults(exam._id)}
+                              style={{
+                                borderRadius: '8px',
+                                color: '#ffffff',
+                                background: 'none',
+                                border: ' #8e44ad 1px solid',
+                                fontSize: '0.6rem',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                              }}
+                              title="View Results"
+                            >
+                              <FaChartBar style={{ color: ' #8e44ad', fontSize: '1.2rem' }} />
+                            </button>                            
                           </>
                         )}
                       </div>

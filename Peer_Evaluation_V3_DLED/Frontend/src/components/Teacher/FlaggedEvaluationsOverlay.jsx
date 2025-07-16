@@ -1,7 +1,7 @@
 import React from "react";
-import { FaTimes, FaEdit, FaFlag } from "react-icons/fa";
+import { FaTimes, FaEdit } from "react-icons/fa";
 
-export default function PeerEvaluationsOverlay({ flaggedEvaluationsOverlayOpen, flaggedEvaluationsOverlayClose, flaggedEvaluations, handleEditEvaluationOverlayOpen }) {
+export default function PeerEvaluationsOverlay({ flaggedEvaluationsOverlayOpen, flaggedEvaluationsOverlayClose, flaggedEvaluations, handleEditEvaluationOverlayOpen, handleEvaluationFlagRemove }) {
   if (!flaggedEvaluationsOverlayOpen) return null;
 
   return (
@@ -68,7 +68,6 @@ export default function PeerEvaluationsOverlay({ flaggedEvaluationsOverlayOpen, 
                 <th style={{ ...thCellStyle }}>Student</th>
                 <th style={{ ...thCellStyle }}>Evaluator</th>
                 <th style={{ ...thCellStyle }}>Total Score</th>
-                <th style={{ ...thCellStyle }}>Feedback</th>
                 <th style={{ ...thCellStyle }}>Document</th>
                 <th style={{ ...thCellStyle }}>Status</th>
                 <th style={{ ...thCellStyle }}>Actions</th>
@@ -77,8 +76,8 @@ export default function PeerEvaluationsOverlay({ flaggedEvaluationsOverlayOpen, 
             <tbody>
               {flaggedEvaluations.length === 0 ? (
                 <tr>
-                  <td colSpan={4} style={{ padding: "24px", textAlign: "center", color: "gray" }}>
-                    No evaluations found.
+                  <td colSpan={6} style={{ padding: "24px", textAlign: "center", color: "gray" }}>
+                    No flagged evaluations found.
                   </td>
                 </tr>
               ) : (
@@ -90,11 +89,6 @@ export default function PeerEvaluationsOverlay({ flaggedEvaluationsOverlayOpen, 
                       {Array.isArray(evaluation.score)
                         ? evaluation.score.reduce((sum, val) => sum + val, 0)
                         : evaluation.score || 0}
-                    </td>
-                    <td style={{ ...tdCellStyle }}>
-                      {Array.isArray(evaluation.feedback)
-                        ? evaluation.feedback.join(", ")
-                        : evaluation.feedback || "No feedback"}
                     </td>
                     <td style={{ ...tdCellStyle }}>
                       {evaluation.document?.documentPath ? (
@@ -116,7 +110,7 @@ export default function PeerEvaluationsOverlay({ flaggedEvaluationsOverlayOpen, 
                         <button style={btnAccept} onClick={() => handleEditEvaluationOverlayOpen(evaluation)}>
                           <FaEdit />
                         </button>
-                        <button style={btnDecline} onClick={() => console.log("Delete Evaluation")}>
+                        <button style={btnDecline} onClick={() => handleEvaluationFlagRemove(evaluation._id, evaluation.exam?._id)}>
                           <FaTimes />
                         </button>
                       </div>
@@ -151,15 +145,6 @@ const btnAccept = {
   borderRadius: "4px",
   border: "none",
   backgroundColor: "#4caf50",
-  color: "#fff",
-  cursor: "pointer",
-};
-
-const btnFlag = {
-  padding: "4px 8px",
-  borderRadius: "4px",
-  border: "none",
-  backgroundColor: " #df610d",
   color: "#fff",
   cursor: "pointer",
 };
