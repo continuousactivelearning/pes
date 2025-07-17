@@ -631,22 +631,27 @@ export default function TeacherDashboard() {
   const handleViewResults = async (examId) => {
     setSelectedExamForResults(examId);
     setResultsOverlayOpen(true);
-    // try {
-    //   const token = localStorage.getItem('token');
-    //   const response = await fetch(`http://localhost:5000/api/teacher/view-results/${examId}`, {
-    //     method: 'GET',
-    //     headers: { Authorization: `Bearer ${token}` },
-    //   });
-    //   const data = await response.json();
-    //   if (response.ok) {
-    //     setResults(data);
-    //     setResultsOverlayOpen(true);
-    //   } else {
-    //     showMessage(data.message || 'Failed to fetch results.', 'error');
-    //   }
-    // } catch (error) {
-    //   showMessage('An error occurred while fetching results!', 'error');
-    // }
+  };
+
+  const handleDownloadResults = async (selectedExamForResults) => {
+    const token = localStorage.getItem("token");
+    await fetch(`http://localhost:5000/api/teacher/download-results-csv/${selectedExamForResults}`,
+      {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    )
+      .then((res) => res.blob())
+      .then((blob) => {
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `exam_${selectedExamForResults}_results.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      });
   };
 
   return (
@@ -1117,6 +1122,7 @@ export default function TeacherDashboard() {
           resultsOverlayOpen={resultsOverlayOpen}
           selectedExamForResults={selectedExamForResults}
           resultsOverlayClose={() => setResultsOverlayOpen(false)}
+          handleDownloadResults={handleDownloadResults}
         />
       )}
 

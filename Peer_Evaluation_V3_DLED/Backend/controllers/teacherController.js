@@ -870,3 +870,96 @@ export const removeTicket = async (req, res) => {
     res.status(500).json({ message: 'Failed to remove ticket!' });
   }
 };
+
+// export const downloadResultsCSV = async (req, res) => {
+//   const { examId } = req.params;
+
+//   try {
+//     const evaluations = await PeerEvaluation.find({ exam: examId, eval_status: 'completed' }).populate('student');
+
+//     const studentScores = {};
+//     evaluations.forEach(ev => {
+//       const studentId = ev.student?._id?.toString();
+//       if (!studentId) return;
+//       if (!studentScores[studentId]) {
+//         studentScores[studentId] = {
+//           name: ev.student.name,
+//           email: ev.student.email,
+//           scores: [],
+//         };
+//       }
+      
+//       let score = ev.score;
+//       if (Array.isArray(score)) {
+//         score = score.reduce((a, b) => a + b, 0) / (score.length || 1);
+//       }
+//       studentScores[studentId].scores.push(typeof score === 'number' ? score : 0);
+//     });
+
+//     const csvData = Object.values(studentScores).map(entry => ({
+//       name: entry.name,
+//       email: entry.email,
+//       average_score: (entry.scores.reduce((a, b) => a + b, 0) / entry.scores.length).toFixed(2),
+//     }));
+
+//     const parser = new Parser({ fields: ['name', 'email', 'average_score'] });
+//     const csv = parser.parse(csvData);
+
+//     res.header('Content-Type', 'text/csv');
+//     res.attachment(`Exam_${examId}_results.csv`);
+//     return res.send(csv);
+//   } catch (error) {
+//     console.error('Error generating results CSV:', error);
+//     res.status(500).json({ message: 'Failed to generate results CSV' });
+//   }
+// };
+
+export const downloadResultsCSV = async (req, res) => {
+  const { examId } = req.params;
+
+  try {
+    // Get all completed evaluations for the exam, with student info
+    const evaluations = await PeerEvaluation.find({ exam: examId, eval_status: 'completed' }).populate('student');
+
+    // Group evaluations by student
+    const studentTotals = {};
+    evaluations.forEach(ev => {
+      const studentId = ev.student?._id?.toString();
+      if (!studentId) return;
+
+      // Calculate total marks for this evaluation
+      let totalMarks = 0;
+      if (Array.isArray(ev.score)) {
+        totalMarks = ev.score.reduce((a, b) => a + b, 0);
+      } else if (typeof ev.score === 'number') {
+        totalMarks = ev.score;
+      }
+
+      if (!studentTotals[studentId]) {
+        studentTotals[studentId] = {
+          name: ev.student.name,
+          email: ev.student.email,
+          totals: [],
+        };
+      }
+      studentTotals[studentId].totals.push(totalMarks);
+    });
+
+    // Prepare CSV data: average the total marks for each student
+    const csvData = Object.values(studentTotals).map(entry => ({
+      name: entry.name,
+      email: entry.email,
+      average_score: (entry.totals.reduce((a, b) => a + b, 0) / entry.totals.length).toFixed(2),
+    }));
+
+    const parser = new Parser({ fields: ['name', 'email', 'average_score'] });
+    const csv = parser.parse(csvData);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment(`Exam_${examId}_results.csv`);
+    return res.send(csv);
+  } catch (error) {
+    console.error('Error generating results CSV:', error);
+    res.status(500).json({ message: 'Failed to generate results CSV' });
+  }
+};
