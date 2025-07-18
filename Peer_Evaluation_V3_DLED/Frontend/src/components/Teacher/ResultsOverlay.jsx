@@ -1,5 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
+import { Bar } from "react-chartjs-2";
+import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
+Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const ResultsOverlay = ({
   resultsOverlayOpen,
@@ -9,6 +12,8 @@ const ResultsOverlay = ({
 }) => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [averages, setAverages] = useState([]);
+  const [loadingAverages, setLoadingAverages] = useState(false);
 
   useEffect(() => {
     if (resultsOverlayOpen && selectedExamForResults) {
@@ -33,7 +38,41 @@ const ResultsOverlay = ({
     }
   }, [resultsOverlayOpen, selectedExamForResults]);
 
+  useEffect(() => {
+    if (resultsOverlayOpen && selectedExamForResults) {
+      setLoadingAverages(true);
+      const token = localStorage.getItem("token");
+      fetch(
+        `http://localhost:5000/api/teacher/exam-averages/${selectedExamForResults}`,
+        { headers: { Authorization: `Bearer ${token}` } }
+      )
+        .then(res => res.json())
+        .then(data => {
+          setAverages(Array.isArray(data) ? data : []);
+          setLoadingAverages(false);
+        })
+        .catch(() => {
+          setAverages([]);
+          setLoadingAverages(false);
+        });
+    }
+  }, [resultsOverlayOpen, selectedExamForResults]);
+
   if (!resultsOverlayOpen) return null;
+
+    const histogramData = {
+    labels: averages.map(a => a.name),
+    datasets: [
+      {
+        label: "Average Score",
+        data: averages.map(a => a.avg),
+        backgroundColor: "#4b3c70",
+      },
+    ],
+  };
+
+  const sortedAverages = [...averages].sort((a, b) => b.avg - a.avg);
+  const topThree = sortedAverages.slice(0, 3);
 
   return (
     <div
@@ -112,7 +151,43 @@ const ResultsOverlay = ({
           <FaTimes style={{ fontSize: "1rem" }} />
         </button>
 
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
+        {/* Leaderboard */}
+        <div style={{ margin: "0.5rem 0", maxWidth: 300, alignSelf: "center" }}>
+          <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Leaderboard</h3>
+          <ol style={{ textAlign: "center", fontWeight: "bold", color: "#4b3c70", fontSize: "1rem", margin: 0, padding: 0 }}>
+            {topThree.map((student, idx) => (
+              <li key={idx} style={{ margin: "0.2rem 0" }}>
+                {student.name} ({student.avg.toFixed(2)})
+              </li>
+            ))}
+          </ol>
+        </div>
+
+        {/* Histogram */}
+        <div style={{ margin: "0.5rem 0", maxWidth: 400, alignSelf: "center" }}>
+          <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Histogram of Student Averages</h3>
+          {loadingAverages ? (
+            <div style={{ textAlign: "center" }}>Loading chart...</div>
+          ) : (
+            <Bar
+              data={histogramData}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: { display: false },
+                },
+                scales: {
+                  x: { title: { display: true, text: "Student" }, ticks: { font: { size: 10 } } },
+                  y: { title: { display: true, text: "Average Score" }, ticks: { font: { size: 10 } } },
+                },
+              }}
+              height={120}
+              width={350}
+            />
+          )}
+        </div>
+
+        {/* <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
           <h2 style={{ textAlign: "center", margin: 0 }}>
             Results
           </h2>
@@ -212,7 +287,7 @@ const ResultsOverlay = ({
               </table>
             </div>
           )}
-        </div>
+        </div> */}
       </div>
     </div>
   );
