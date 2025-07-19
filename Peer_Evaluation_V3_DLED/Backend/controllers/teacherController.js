@@ -916,20 +916,19 @@ export const downloadResultsCSV = async (req, res) => {
   }
 };
 
-export const getExamAverages = async (req, res) => {
+export const getResultsAnalytics = async (req, res) => {
   const { examId } = req.params;
   try {
-    const evaluations = await PeerEvaluation.find({ exam: examId, eval_status: 'completed' }).populate('student');
+    const evaluations = await PeerEvaluation.find({ exam: examId }).populate('student');
+
+    // Leaderboard (top 3)
     const studentTotals = {};
     evaluations.forEach(ev => {
       const studentId = ev.student?._id?.toString();
       if (!studentId) return;
       let totalMarks = 0;
-      if (Array.isArray(ev.score)) {
-        totalMarks = ev.score.reduce((a, b) => a + b, 0);
-      } else if (typeof ev.score === 'number') {
-        totalMarks = ev.score;
-      }
+      if (Array.isArray(ev.score)) totalMarks = ev.score.reduce((a, b) => a + b, 0);
+      else if (typeof ev.score === 'number') totalMarks = ev.score;
       if (!studentTotals[studentId]) {
         studentTotals[studentId] = {
           name: ev.student.name,
@@ -944,8 +943,89 @@ export const getExamAverages = async (req, res) => {
       email: entry.email,
       avg: entry.totals.reduce((a, b) => a + b, 0) / entry.totals.length,
     }));
-    res.json(averages);
+    const sortedAverages = [...averages].sort((a, b) => b.avg - a.avg);
+    const leaderboard = sortedAverages.slice(0, 3);
+
+    // Histogram
+    const avgScores = averages.map(a => a.avg);
+    const minScore = Math.min(...avgScores, 0);
+    const maxScore = Math.max(...avgScores, 0);
+    const binCount = 6;
+    const binSize = Math.ceil((maxScore - minScore) / binCount) || 1;
+    const bins = [];
+    for (let i = 0; i < binCount; i++) {
+      const start = minScore + i * binSize;
+      const end = i === binCount - 1 ? maxScore : start + binSize - 1;
+      bins.push({
+        label: `${start} - ${end}`,
+        count: 0,
+        range: [start, end],
+      });
+    }
+    avgScores.forEach(score => {
+      for (let i = 0; i < bins.length; i++) {
+        const [start, end] = bins[i].range;
+        if (score >= start && (i === bins.length - 1 ? score <= end : score < end + 1)) {
+          bins[i].count += 1;
+          break;
+        }
+      }
+    });
+
+    // Question-wise averages
+    let maxQuestions = 0;
+    evaluations.forEach(ev => {
+      if (Array.isArray(ev.score)) maxQuestions = Math.max(maxQuestions, ev.score.length);
+    });
+    const questionSums = Array(maxQuestions).fill(0);
+    const questionCounts = Array(maxQuestions).fill(0);
+    evaluations.forEach(ev => {
+      if (Array.isArray(ev.score)) {
+        ev.score.forEach((val, idx) => {
+          questionSums[idx] += val;
+          questionCounts[idx] += 1;
+        });
+      }
+    });
+    const questionAverages = questionSums.map((sum, idx) =>
+      questionCounts[idx] ? sum / questionCounts[idx] : 0
+    );
+
+    // Scatter plot: Student averages vs. number of evaluations
+    const studentEvalCount = {};
+    evaluations.forEach(ev => {
+      const sid = ev.student?._id?.toString();
+      if (!sid) return;
+      if (!studentEvalCount[sid]) studentEvalCount[sid] = { count: 0, total: 0, name: ev.student?.name || "-" };
+      let totalMarks = 0;
+      if (Array.isArray(ev.score)) totalMarks = ev.score.reduce((a, b) => a + b, 0);
+      else if (typeof ev.score === "number") totalMarks = ev.score;
+      studentEvalCount[sid].count += 1;
+      studentEvalCount[sid].total += totalMarks;
+    });
+    const scatterData = Object.values(studentEvalCount).map(s => ({
+      x: s.count,
+      y: s.total / s.count,
+      label: s.name,
+    }));
+
+    // Stacked bar: Evaluation status per student
+    let completed = 0, pending = 0, flagged = 0;
+    evaluations.forEach(ev => {
+      if (ev.eval_status === "completed") completed += 1;
+      else if (ev.eval_status === "pending") pending += 1;
+      if (ev.ticket === 1 || ev.ticket === 2) flagged += 1;
+    });
+    const evalStatus = { completed, pending, flagged };
+
+    res.json({
+      leaderboard,
+      histogram: bins.map(b => ({ label: b.label, count: b.count })),
+      questionAverages,
+      scatterData,
+      evalStatus,
+    });
   } catch (error) {
-    res.status(500).json({ message: 'Failed to get averages!' });
+    res.status(500).json({ message: 'Failed to get analytics!' });
   }
 };

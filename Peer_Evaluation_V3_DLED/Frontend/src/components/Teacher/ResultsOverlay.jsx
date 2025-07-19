@@ -12,67 +12,105 @@ const ResultsOverlay = ({
 }) => {
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [histogramBins, setHistogramBins] = useState([]);
   const [averages, setAverages] = useState([]);
   const [loadingAverages, setLoadingAverages] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+  const evalStatus = analytics?.evalStatus || { completed: 0, pending: 0, flagged: 0 };
 
   useEffect(() => {
     if (resultsOverlayOpen && selectedExamForResults) {
-      setLoading(true);
+      setLoadingAnalytics(true);
       const token = localStorage.getItem("token");
       fetch(
-        `http://localhost:5000/api/teacher/view-results/${selectedExamForResults}`,
-        {
-          method: "GET",
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      )
-        .then((res) => res.json())
-        .then((data) => {
-          setResults(Array.isArray(data) ? data : []);
-          setLoading(false);
-        })
-        .catch(() => {
-          setResults([]);
-          setLoading(false);
-        });
-    }
-  }, [resultsOverlayOpen, selectedExamForResults]);
-
-  useEffect(() => {
-    if (resultsOverlayOpen && selectedExamForResults) {
-      setLoadingAverages(true);
-      const token = localStorage.getItem("token");
-      fetch(
-        `http://localhost:5000/api/teacher/exam-averages/${selectedExamForResults}`,
+        `http://localhost:5000/api/teacher/results-analytics/${selectedExamForResults}`,
         { headers: { Authorization: `Bearer ${token}` } }
       )
         .then(res => res.json())
         .then(data => {
-          setAverages(Array.isArray(data) ? data : []);
-          setLoadingAverages(false);
+          setAnalytics(data);
+          setLoadingAnalytics(false);
         })
         .catch(() => {
-          setAverages([]);
-          setLoadingAverages(false);
+          setAnalytics(null);
+          setLoadingAnalytics(false);
         });
     }
   }, [resultsOverlayOpen, selectedExamForResults]);
 
   if (!resultsOverlayOpen) return null;
 
-    const histogramData = {
-    labels: averages.map(a => a.name),
+  const leaderboard = analytics?.leaderboard || [];
+  const histogramData = {
+    labels: analytics?.histogram?.map(b => b.label) || [],
     datasets: [
       {
-        label: "Average Score",
-        data: averages.map(a => a.avg),
+        label: "Number of Students",
+        data: analytics?.histogram?.map(b => b.count) || [],
         backgroundColor: "#4b3c70",
       },
     ],
   };
+  const questionWiseData = {
+    labels: analytics?.questionAverages
+      ? analytics.questionAverages.map((_, i) => `Q${i + 1}`)
+      : [],
+    datasets: [
+      {
+        label: "Average Score",
+        data: analytics?.questionAverages || [],
+        backgroundColor: "#1e88e5",
+      },
+    ],
+  };
+  const scatterData = {
+    datasets: [
+      {
+        label: "Students",
+        data: analytics?.scatterData || [],
+        backgroundColor: "#43a047",
+      },
+    ],
+  };
 
-  const sortedAverages = [...averages].sort((a, b) => b.avg - a.avg);
-  const topThree = sortedAverages.slice(0, 3);
+<div style={{
+  display: "flex",
+  justifyContent: "center",
+  gap: "2rem",
+  margin: "1.5rem 0"
+}}>
+  <div style={{
+    background: "#e3e3f7",
+    borderRadius: "8px",
+    padding: "1rem 2rem",
+    textAlign: "center",
+    minWidth: 120
+  }}>
+    <div style={{ fontWeight: 600, color: "#388e3c" }}>Completed</div>
+    <div style={{ fontSize: "1.5rem" }}>{evalStatus.completed}</div>
+  </div>
+  <div style={{
+    background: "#fffbe7",
+    borderRadius: "8px",
+    padding: "1rem 2rem",
+    textAlign: "center",
+    minWidth: 120
+  }}>
+    <div style={{ fontWeight: 600, color: "#fbc02d" }}>Pending</div>
+    <div style={{ fontSize: "1.5rem" }}>{evalStatus.pending}</div>
+  </div>
+  <div style={{
+    background: "#fdeaea",
+    borderRadius: "8px",
+    padding: "1rem 2rem",
+    textAlign: "center",
+    minWidth: 120
+  }}>
+    <div style={{ fontWeight: 600, color: "#d32f2f" }}>Flagged</div>
+    <div style={{ fontSize: "1.5rem" }}>{evalStatus.flagged}</div>
+  </div>
+</div>
 
   return (
     <div
@@ -151,11 +189,11 @@ const ResultsOverlay = ({
           <FaTimes style={{ fontSize: "1rem" }} />
         </button>
 
-        {/* Leaderboard */}
+        {/* Leaderboard at the top */}
         <div style={{ margin: "0.5rem 0", maxWidth: 300, alignSelf: "center" }}>
           <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Leaderboard</h3>
           <ol style={{ textAlign: "center", fontWeight: "bold", color: "#4b3c70", fontSize: "1rem", margin: 0, padding: 0 }}>
-            {topThree.map((student, idx) => (
+            {leaderboard.map((student, idx) => (
               <li key={idx} style={{ margin: "0.2rem 0" }}>
                 {student.name} ({student.avg.toFixed(2)})
               </li>
@@ -163,131 +201,125 @@ const ResultsOverlay = ({
           </ol>
         </div>
 
-        {/* Histogram */}
-        <div style={{ margin: "0.5rem 0", maxWidth: 400, alignSelf: "center" }}>
-          <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Histogram of Student Averages</h3>
-          {loadingAverages ? (
-            <div style={{ textAlign: "center" }}>Loading chart...</div>
-          ) : (
-            <Bar
-              data={histogramData}
-              options={{
-                responsive: true,
-                plugins: {
-                  legend: { display: false },
-                },
-                scales: {
-                  x: { title: { display: true, text: "Student" }, ticks: { font: { size: 10 } } },
-                  y: { title: { display: true, text: "Average Score" }, ticks: { font: { size: 10 } } },
-                },
-              }}
-              height={120}
-              width={350}
-            />
-          )}
+        {/* First row: Histogram & Question-wise */}
+        <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap" }}>
+          {/* Histogram */}
+          <div style={{ flex: "1 1 400px", maxWidth: 400 }}>
+            <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Histogram of Student Averages</h3>
+            {loadingAnalytics ? (
+              <div style={{ textAlign: "center" }}>Loading chart...</div>
+            ) : (
+              <Bar
+                data={histogramData}
+                options={{
+                  responsive: true,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { title: { display: true, text: "Average Score Range" }, ticks: { font: { size: 10 } } },
+                    y: {
+                      title: { display: true, text: "Number of Students" },
+                      ticks: {
+                        font: { size: 10 },
+                        stepSize: 1,
+                        callback: value => (Number.isInteger(value) ? value : null),
+                      },
+                      beginAtZero: true,
+                      precision: 0,
+                    },
+                  },
+                }}
+                height={120}
+                width={350}
+              />
+            )}
+          </div>
+          {/* Question-wise Average Scores */}
+          <div style={{ flex: "1 1 400px", maxWidth: 400 }}>
+            <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Question-wise Average Scores</h3>
+            {loadingAnalytics ? (
+              <div style={{ textAlign: "center" }}>Loading chart...</div>
+            ) : (
+              <Bar
+                data={questionWiseData}
+                options={{
+                  responsive: true,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { title: { display: true, text: "Question" }, ticks: { font: { size: 10 } } },
+                    y: { title: { display: true, text: "Average Score" }, beginAtZero: true, precision: 0 },
+                  },
+                }}
+                height={120}
+                width={350}
+              />
+            )}
+          </div>
         </div>
 
-        {/* <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <h2 style={{ textAlign: "center", margin: 0 }}>
-            Results
-          </h2>
-          {loading ? (
-            <div style={{ textAlign: "center", fontSize: "1.2rem" }}>
-              Loading...
-            </div>
-          ) : (
-            <div
-              style={{
-                flex: 1,
-                overflowY: "auto",
-                border: "1px solid #ccc",
-                borderRadius: "8px",
-                background: "#f9f9f9",
-                padding: "1rem",
-                maxHeight: "60vh",
-              }}
-            >
-              <table
-                style={{
-                  width: "100%",
-                  borderCollapse: "collapse",
-                  fontSize: "1rem",
+        {/* Second row: Scatter & Stacked Bar */}
+        <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", marginTop: "2rem" }}>
+          {/* Scatter Plot */}
+          <div style={{ flex: "1 1 400px", maxWidth: 400 }}>
+            <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Student Averages vs. Number of Evaluations</h3>
+            {loadingAnalytics ? (
+              <div style={{ textAlign: "center" }}>Loading chart...</div>
+            ) : (
+              <Bar
+                type="scatter"
+                data={scatterData}
+                options={{
+                  responsive: true,
+                  plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const d = context.raw;
+                          return `${d.label}: ${d.x} evals, avg ${d.y.toFixed(2)}`;
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    x: { title: { display: true, text: "Number of Evaluations" }, beginAtZero: true, precision: 0 },
+                    y: { title: { display: true, text: "Average Score" }, beginAtZero: true, precision: 0 },
+                  },
                 }}
-              >
-                <thead>
-                  <tr>
-                    <th
-                      style={{
-                        borderBottom: "1px solid #ccc",
-                        padding: "8px",
-                        background: "#4b3c70",
-                        color: "#fff",
-                      }}
-                    >
-                      Student Name
-                    </th>
-                    <th
-                      style={{
-                        borderBottom: "1px solid #ccc",
-                        padding: "8px",
-                        background: "#4b3c70",
-                        color: "#fff",
-                      }}
-                    >
-                      Email
-                    </th>
-                    <th
-                      style={{
-                        borderBottom: "1px solid #ccc",
-                        padding: "8px",
-                        background: "#4b3c70",
-                        color: "#fff",
-                      }}
-                    >
-                      Score
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {Array.isArray(results) && results.length > 0 ? (
-                    results.map((result, idx) => (
-                      <tr key={idx}>
-                        <td style={{ padding: "8px", color: "#4b3c70" }}>
-                          {result.studentName ||
-                            result.name ||
-                            result.student?.name ||
-                            "-"}
-                        </td>
-                        <td style={{ padding: "8px", color: "#4b3c70" }}>
-                          {result.studentEmail ||
-                            result.email ||
-                            result.student?.email ||
-                            "-"}
-                        </td>
-                        <td style={{ padding: "8px", color: "#4b3c70" }}>
-                          {result.score}
-                        </td>
-                      </tr>
-                    ))
-                  ) : (
-                    <tr>
-                      <td
-                        colSpan={3}
-                        style={{
-                          padding: "8px",
-                          textAlign: "center",
-                          color: "#888",
-                        }}
-                      >
-                        No results available.
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div> */}
+                height={120}
+                width={350}
+              />
+            )}
+          </div>
+          {/* Stacked Bar Chart */}
+          <div style={{ flex: "1 1 400px", maxWidth: 400 }}>
+            <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Evaluation Status per Student</h3>
+            {loadingAnalytics ? (
+              <div style={{ textAlign: "center" }}>Loading chart...</div>
+            ) : (
+              <Bar
+                data={{
+                  labels: ["Completed", "Pending", "Flagged"],
+                  datasets: [{
+                    label: "Count",
+                    data: [evalStatus.completed, evalStatus.pending, evalStatus.flagged],
+                    backgroundColor: ["#388e3c", "#fbc02d", "#d32f2f"]
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: { title: { display: true, text: "Status" } },
+                    y: { title: { display: true, text: "Count" }, beginAtZero: true, precision: 0 }
+                  }
+                }}
+                height={120}
+                width={350}
+              />
+            )}
+          </div>
+        </div>
+        
       </div>
     </div>
   );
