@@ -1029,3 +1029,13 @@ export const getResultsAnalytics = async (req, res) => {
     res.status(500).json({ message: 'Failed to get analytics!' });
   }
 };
+
+export const getCompletedExamsForTeacher = async (req, res) => {
+  try {
+    const teacherId = req.user._id;
+    const exams = await Examination.find({ createdBy: teacherId, completed: true }).populate('batch');
+    res.status(200).json({ exams });
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to get completed exams!' });
+  }
+};

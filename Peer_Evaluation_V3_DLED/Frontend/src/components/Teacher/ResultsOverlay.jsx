@@ -10,14 +10,8 @@ const ResultsOverlay = ({
   resultsOverlayClose,
   handleDownloadResults,
 }) => {
-  const [results, setResults] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [histogramBins, setHistogramBins] = useState([]);
-  const [averages, setAverages] = useState([]);
-  const [loadingAverages, setLoadingAverages] = useState(false);
   const [analytics, setAnalytics] = useState(null);
   const [loadingAnalytics, setLoadingAnalytics] = useState(false);
-  const evalStatus = analytics?.evalStatus || { completed: 0, pending: 0, flagged: 0 };
 
   useEffect(() => {
     if (resultsOverlayOpen && selectedExamForResults) {
@@ -42,13 +36,16 @@ const ResultsOverlay = ({
   if (!resultsOverlayOpen) return null;
 
   const leaderboard = analytics?.leaderboard || [];
+  const evalStatus = analytics?.evalStatus || { completed: 0, pending: 0, flagged: 0 };
   const histogramData = {
     labels: analytics?.histogram?.map(b => b.label) || [],
     datasets: [
       {
         label: "Number of Students",
         data: analytics?.histogram?.map(b => b.count) || [],
-        backgroundColor: "#4b3c70",
+        backgroundColor: "#7c5fe6",
+        borderRadius: 8,
+        borderSkipped: false,
       },
     ],
   };
@@ -61,6 +58,8 @@ const ResultsOverlay = ({
         label: "Average Score",
         data: analytics?.questionAverages || [],
         backgroundColor: "#1e88e5",
+        borderRadius: 8,
+        borderSkipped: false,
       },
     ],
   };
@@ -70,47 +69,11 @@ const ResultsOverlay = ({
         label: "Students",
         data: analytics?.scatterData || [],
         backgroundColor: "#43a047",
+        pointRadius: 6,
+        pointHoverRadius: 9,
       },
     ],
   };
-
-<div style={{
-  display: "flex",
-  justifyContent: "center",
-  gap: "2rem",
-  margin: "1.5rem 0"
-}}>
-  <div style={{
-    background: "#e3e3f7",
-    borderRadius: "8px",
-    padding: "1rem 2rem",
-    textAlign: "center",
-    minWidth: 120
-  }}>
-    <div style={{ fontWeight: 600, color: "#388e3c" }}>Completed</div>
-    <div style={{ fontSize: "1.5rem" }}>{evalStatus.completed}</div>
-  </div>
-  <div style={{
-    background: "#fffbe7",
-    borderRadius: "8px",
-    padding: "1rem 2rem",
-    textAlign: "center",
-    minWidth: 120
-  }}>
-    <div style={{ fontWeight: 600, color: "#fbc02d" }}>Pending</div>
-    <div style={{ fontSize: "1.5rem" }}>{evalStatus.pending}</div>
-  </div>
-  <div style={{
-    background: "#fdeaea",
-    borderRadius: "8px",
-    padding: "1rem 2rem",
-    textAlign: "center",
-    minWidth: 120
-  }}>
-    <div style={{ fontWeight: 600, color: "#d32f2f" }}>Flagged</div>
-    <div style={{ fontSize: "1.5rem" }}>{evalStatus.flagged}</div>
-  </div>
-</div>
 
   return (
     <div
@@ -134,8 +97,8 @@ const ResultsOverlay = ({
         style={{
           background: "#fff",
           padding: "2rem",
-          borderRadius: "8px",
-          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+          borderRadius: "16px",
+          boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
           width: "90%",
           maxWidth: "1200px",
           minHeight: "300px",
@@ -144,7 +107,7 @@ const ResultsOverlay = ({
           flexDirection: "column",
           gap: "2rem",
           position: "relative",
-          overflow: "hidden",
+          overflow: "auto",
         }}
       >
         {/* Download CSV Button */}
@@ -189,23 +152,128 @@ const ResultsOverlay = ({
           <FaTimes style={{ fontSize: "1rem" }} />
         </button>
 
-        {/* Leaderboard at the top */}
-        <div style={{ margin: "0.5rem 0", maxWidth: 300, alignSelf: "center" }}>
-          <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Leaderboard</h3>
-          <ol style={{ textAlign: "center", fontWeight: "bold", color: "#4b3c70", fontSize: "1rem", margin: 0, padding: 0 }}>
+        {/* Leaderboard Card */}
+        <div style={{
+          margin: "0.5rem 0",
+          maxWidth: 340,
+          alignSelf: "center",
+          background: "#f7f6fd",
+          borderRadius: "16px",
+          boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+          padding: "1.5rem 1rem"
+        }}>
+          <h3 style={{
+            textAlign: "center",
+            marginBottom: "0.7rem",
+            fontSize: "1.35rem",
+            color: "#4b3c70",
+            fontWeight: 700,
+            letterSpacing: "0.5px",
+            textShadow: "0 1px 2px #e3e3f7"
+          }}>Leaderboard</h3>
+          <ol style={{
+            textAlign: "center",
+            fontWeight: "bold",
+            color: "#4b3c70",
+            fontSize: "1.12rem",
+            margin: 0,
+            padding: 0,
+            listStyle: "decimal inside"
+          }}>
             {leaderboard.map((student, idx) => (
-              <li key={idx} style={{ margin: "0.2rem 0" }}>
-                {student.name} ({student.avg.toFixed(2)})
+              <li key={idx} style={{
+                margin: "0.4rem 0",
+                background: idx === 0 ? "#e3e3f7" : idx === 1 ? "#fffbe7" : idx === 2 ? "#fdeaea" : "transparent",
+                borderRadius: "8px",
+                padding: "0.4rem 0.7rem",
+                fontWeight: idx === 0 ? 700 : 500,
+                boxShadow: idx < 3 ? "0 2px 8px rgba(75,60,112,0.08)" : "none",
+                border: idx < 3 ? "1px solid #e3e3f7" : "none"
+              }}>
+                <span>{student.name}</span>
+                <span style={{ color: "#888", marginLeft: 8 }}>({student.avg.toFixed(2)})</span>
               </li>
             ))}
           </ol>
         </div>
 
+        {/* Status Cards */}
+        <div style={{
+          display: "flex",
+          justifyContent: "center",
+          gap: "2rem",
+          margin: "1.5rem 0"
+        }}>
+          <div style={{
+            background: "#e3e3f7",
+            borderRadius: "16px",
+            padding: "1.2rem 2.2rem",
+            textAlign: "center",
+            minWidth: 120,
+            boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+            border: "1px solid #e3e3f7"
+          }}>
+            <div style={{ fontWeight: 700, color: "#388e3c", fontSize: "1.15rem", marginBottom: "0.3rem" }}>Completed</div>
+            <div style={{ fontSize: "2.2rem", fontWeight: 700 }}>{evalStatus.completed}</div>
+          </div>
+          <div style={{
+            background: "#fffbe7",
+            borderRadius: "16px",
+            padding: "1.2rem 2.2rem",
+            textAlign: "center",
+            minWidth: 120,
+            boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+            border: "1px solid #fffbe7"
+          }}>
+            <div style={{ fontWeight: 700, color: "#fbc02d", fontSize: "1.15rem", marginBottom: "0.3rem" }}>Pending</div>
+            <div style={{ fontSize: "2.2rem", fontWeight: 700 }}>{evalStatus.pending}</div>
+          </div>
+          <div style={{
+            background: "#fdeaea",
+            borderRadius: "16px",
+            padding: "1.2rem 2.2rem",
+            textAlign: "center",
+            minWidth: 120,
+            boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+            border: "1px solid #fdeaea"
+          }}>
+            <div style={{ fontWeight: 700, color: "#d32f2f", fontSize: "1.15rem", marginBottom: "0.3rem" }}>Flagged</div>
+            <div style={{ fontSize: "2.2rem", fontWeight: 700 }}>{evalStatus.flagged}</div>
+          </div>
+        </div>
+
         {/* First row: Histogram & Question-wise */}
         <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap" }}>
           {/* Histogram */}
-          <div style={{ flex: "1 1 400px", maxWidth: 400 }}>
-            <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Histogram of Student Averages</h3>
+          <div
+            style={{
+              flex: "1 1 400px",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+              padding: "2rem 1.2rem",
+              marginBottom: "1.5rem",
+              transition: "box-shadow 0.2s",
+              cursor: "default",
+              border: "1px solid #f7f6fd",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 8px 24px rgba(75,60,112,0.18)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(75,60,112,0.13)")}
+          >
+            <h3
+              style={{
+                textAlign: "center",
+                marginBottom: "1.2rem",
+                fontSize: "1.25rem",
+                color: "#7c5fe6",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                textShadow: "0 1px 2px #f7f6fd",
+              }}
+            >
+              Histogram of Student Averages
+            </h3>
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
@@ -215,11 +283,15 @@ const ResultsOverlay = ({
                   responsive: true,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { title: { display: true, text: "Average Score Range" }, ticks: { font: { size: 10 } } },
+                    x: {
+                      title: { display: true, text: "Average Score Range", color: "#7c5fe6", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+                    },
                     y: {
-                      title: { display: true, text: "Number of Students" },
+                      title: { display: true, text: "Number of Students", color: "#7c5fe6", font: { size: 14, weight: "bold" } },
                       ticks: {
-                        font: { size: 10 },
+                        font: { size: 12 },
+                        color: "#4b3c70",
                         stepSize: 1,
                         callback: value => (Number.isInteger(value) ? value : null),
                       },
@@ -234,8 +306,35 @@ const ResultsOverlay = ({
             )}
           </div>
           {/* Question-wise Average Scores */}
-          <div style={{ flex: "1 1 400px", maxWidth: 400 }}>
-            <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Question-wise Average Scores</h3>
+          <div
+            style={{
+              flex: "1 1 400px",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+              padding: "2rem 1.2rem",
+              marginBottom: "1.5rem",
+              transition: "box-shadow 0.2s",
+              cursor: "default",
+              border: "1px solid #f7f6fd",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 8px 24px rgba(75,60,112,0.18)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(75,60,112,0.13)")}
+          >
+            <h3
+              style={{
+                textAlign: "center",
+                marginBottom: "1.2rem",
+                fontSize: "1.25rem",
+                color: "#1e88e5",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                textShadow: "0 1px 2px #f7f6fd",
+              }}
+            >
+              Question-wise Average Scores
+            </h3>
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
@@ -245,8 +344,16 @@ const ResultsOverlay = ({
                   responsive: true,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { title: { display: true, text: "Question" }, ticks: { font: { size: 10 } } },
-                    y: { title: { display: true, text: "Average Score" }, beginAtZero: true, precision: 0 },
+                    x: {
+                      title: { display: true, text: "Question", color: "#1e88e5", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+                    },
+                    y: {
+                      title: { display: true, text: "Average Score", color: "#1e88e5", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" },
+                      beginAtZero: true,
+                      precision: 0,
+                    },
                   },
                 }}
                 height={120}
@@ -256,11 +363,38 @@ const ResultsOverlay = ({
           </div>
         </div>
 
-        {/* Second row: Scatter & Stacked Bar */}
+        {/* Second row: Scatter & Status Bar */}
         <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", marginTop: "2rem" }}>
           {/* Scatter Plot */}
-          <div style={{ flex: "1 1 400px", maxWidth: 400 }}>
-            <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Student Averages vs. Number of Evaluations</h3>
+          <div
+            style={{
+              flex: "1 1 400px",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+              padding: "2rem 1.2rem",
+              marginBottom: "1.5rem",
+              transition: "box-shadow 0.2s",
+              cursor: "default",
+              border: "1px solid #f7f6fd",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 8px 24px rgba(75,60,112,0.18)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(75,60,112,0.13)")}
+          >
+            <h3
+              style={{
+                textAlign: "center",
+                marginBottom: "1.2rem",
+                fontSize: "1.25rem",
+                color: "#43a047",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                textShadow: "0 1px 2px #f7f6fd",
+              }}
+            >
+              Student Averages vs. Number of Evaluations
+            </h3>
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
@@ -281,8 +415,16 @@ const ResultsOverlay = ({
                     }
                   },
                   scales: {
-                    x: { title: { display: true, text: "Number of Evaluations" }, beginAtZero: true, precision: 0 },
-                    y: { title: { display: true, text: "Average Score" }, beginAtZero: true, precision: 0 },
+                    x: {
+                      title: { display: true, text: "Number of Evaluations", color: "#43a047", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+                    },
+                    y: {
+                      title: { display: true, text: "Average Score", color: "#43a047", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" },
+                      beginAtZero: true,
+                      precision: 0,
+                    },
                   },
                 }}
                 height={120}
@@ -290,9 +432,36 @@ const ResultsOverlay = ({
               />
             )}
           </div>
-          {/* Stacked Bar Chart */}
-          <div style={{ flex: "1 1 400px", maxWidth: 400 }}>
-            <h3 style={{ textAlign: "center", marginBottom: "0.3rem", fontSize: "1.1rem" }}>Evaluation Status per Student</h3>
+          {/* Status Bar Chart */}
+          <div
+            style={{
+              flex: "1 1 400px",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+              padding: "2rem 1.2rem",
+              marginBottom: "1.5rem",
+              transition: "box-shadow 0.2s",
+              cursor: "default",
+              border: "1px solid #f7f6fd",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 8px 24px rgba(75,60,112,0.18)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(75,60,112,0.13)")}
+          >
+            <h3
+              style={{
+                textAlign: "center",
+                marginBottom: "1.2rem",
+                fontSize: "1.25rem",
+                color: "#283593",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                textShadow: "0 1px 2px #f7f6fd",
+              }}
+            >
+              Evaluation Status Counts
+            </h3>
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
@@ -302,15 +471,25 @@ const ResultsOverlay = ({
                   datasets: [{
                     label: "Count",
                     data: [evalStatus.completed, evalStatus.pending, evalStatus.flagged],
-                    backgroundColor: ["#388e3c", "#fbc02d", "#d32f2f"]
+                    backgroundColor: ["#388e3c", "#fbc02d", "#d32f2f"],
+                    borderRadius: 8,
+                    borderSkipped: false,
                   }]
                 }}
                 options={{
                   responsive: true,
                   plugins: { legend: { display: false } },
                   scales: {
-                    x: { title: { display: true, text: "Status" } },
-                    y: { title: { display: true, text: "Count" }, beginAtZero: true, precision: 0 }
+                    x: {
+                      title: { display: true, text: "Status", color: "#283593", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+                    },
+                    y: {
+                      title: { display: true, text: "Count", color: "#283593", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" },
+                      beginAtZero: true,
+                      precision: 0,
+                    }
                   }
                 }}
                 height={120}
@@ -319,7 +498,6 @@ const ResultsOverlay = ({
             )}
           </div>
         </div>
-        
       </div>
     </div>
   );

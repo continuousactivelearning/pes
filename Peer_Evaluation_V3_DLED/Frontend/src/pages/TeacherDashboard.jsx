@@ -9,6 +9,7 @@ import ProfileMenu from '../components/User/ProfileMenu.jsx';
 import ScheduleExamOverlay from '../components/Teacher/ScheduleExamOverlay.jsx';
 import EnrollStudentsOverlay from '../components/Teacher/EnrollStudentsOverlay.jsx';
 import EditExamOverlay from '../components/Teacher/EditExamOverlay.jsx';
+import ExamHistoryOverlay from '../components/Teacher/ExamHistoryOverlay.jsx';
 import ExamList from '../components/Teacher/ExamList.jsx';
 import { showSendEvaluationDialog, showFlagEvaluationsDialog, showMarkAsDoneDialog, showDeleteExamDialog } from '../components/Teacher/messageDialogs.jsx';
 import BulkUploadOverlay from '../components/Teacher/BulkUploadOverlay.jsx';
@@ -29,6 +30,8 @@ export default function TeacherDashboard() {
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [selectedBatch, setSelectedBatch] = useState(null);
   const [exams, setExams] = useState([]);
+  const [examHistoryOverlayOpen, setExamHistoryOverlayOpen] = useState(false);
+  const [completedExams, setCompletedExams] = useState([]);
   const navigate = useNavigate();
   const [isEditExamOverlayOpen, setEditExamOverlayOpen] = useState(false);
   const [selectedExam, setSelectedExam] = useState(null);
@@ -546,6 +549,25 @@ export default function TeacherDashboard() {
     }
   };
 
+  const handleExamHistory = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/teacher/completed-exams', {
+        method: 'GET',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      if (response.ok && Array.isArray(data.exams)) {
+        setCompletedExams(data.exams);
+        setExamHistoryOverlayOpen(true);
+      } else {
+        showMessage('No completed exams found!', 'info');
+      }
+    } catch (error) {
+      showMessage(error.message, 'error');
+    }
+  };
+
   const handleViewEvaluations = async (examId) => {
     try {
       const token = localStorage.getItem('token');
@@ -969,9 +991,29 @@ export default function TeacherDashboard() {
           
           {activeTab === 'exam' && (
             <div style={{ display: 'flex', flexDirection: 'column', color: '#2d3559', width: '100%' }}>
-              <h2 style={{ ...sectionHeading, marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>
-                Exam Management
-              </h2>
+              <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', position: 'relative', marginBottom: '2rem' }}>
+                <h2 style={{ ...sectionHeading, marginBottom: '2rem', textAlign: 'center', color: '#3f3d56', flex: 1 }}>
+                  Exam Management
+                </h2>
+                <button
+                  onClick={handleExamHistory}
+                  style={{
+                    position: 'absolute',
+                    right: 0,
+                    background: '#4b3c70',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '8px',
+                    padding: '0.6rem 1.2rem',
+                    fontWeight: 'bold',
+                    fontSize: '1rem',
+                    cursor: 'pointer',
+                    boxShadow: '0 2px 8px rgba(60,60,120,0.12)',
+                  }}
+                >
+                  Exam History
+                </button>
+              </div>
 
               {/* Inline Row for Course, Batch Dropdowns, and Schedule Exam Button */}
               <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', width: '100%' }}>
@@ -1087,6 +1129,14 @@ export default function TeacherDashboard() {
           exam={selectedExam}
           onClose={handleEditExamOverlayClose}
           onSubmit={handleEditExamOverlaySubmit}
+        />
+      )}
+
+      {examHistoryOverlayOpen && (
+        <ExamHistoryOverlay
+          open={examHistoryOverlayOpen}
+          onClose={() => setExamHistoryOverlayOpen(false)}
+          exams={completedExams}
         />
       )}
 
