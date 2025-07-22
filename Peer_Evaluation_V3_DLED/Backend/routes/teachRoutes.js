@@ -1,6 +1,6 @@
 import express from 'express';
 import { protect, adminOrTeacherOnly } from '../middleware/authMiddleware.js';
-import { assignTA, bulkUploadDocuments, completeExam, deassignTA, deleteExam, downloadPDF, downloadResultsCSV, flagEvaluations, getCompletedExamsForTeacher, getEnrolledStudents, getExamsForTeacher, getFlaggedEvaluationsForExam, getResultsAnalytics, getTeacherCoursesAndBatches, removeTicket, scheduleExam, sendEvaluation, studentsEnroll, updateEvaluation, updateExam } from '../controllers/teacherController.js';
+import { assignTA, bulkUploadDocuments, completeExam, deassignTA, deleteExam, downloadIncentivesCSV, downloadPDF, downloadResultsCSV, flagEvaluations, getCompletedExamsForTeacher, getEnrolledStudents, getExamsForTeacher, getFlaggedEvaluationsForExam, getResultsAnalytics, getTeacherCoursesAndBatches, removeTicket, scheduleExam, sendEvaluation, studentsEnroll, updateEvaluation, updateExam } from '../controllers/teacherController.js';
 import upload from '../utils/fileUpload.js'; // Assuming you have a fileUpload.js for handling file uploads
 
 const router = express.Router();
@@ -26,5 +26,6 @@ router.put('/update-evaluation/:evaluationId', protect, adminOrTeacherOnly, upda
 router.put('/remove-ticket/:evaluationId', protect, adminOrTeacherOnly, removeTicket);
 router.get('/download-results-csv/:examId', protect, adminOrTeacherOnly, downloadResultsCSV);
 router.get('/results-analytics/:examId', protect, adminOrTeacherOnly, getResultsAnalytics);
+router.get('/download-incentives-csv/:batchId', protect, adminOrTeacherOnly, downloadIncentivesCSV);
 
 export default router;

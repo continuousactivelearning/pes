@@ -433,15 +433,21 @@ export const completeExam = async (req, res) => {
       return res.status(404).json({ message: 'Exam not found' });
     }
 
+    if (exam.completed) {
+      return res.status(400).json({ message: 'Exam is already completed!' });
+    }
+
     exam.completed = true;
     await exam.save();
 
-    res.status(200).json({ message: 'Exam marked as completed successfully!' });
+    await calculateIncentivesForBatch(exam.batch, examId);
+
+    res.status(200).json({ message: 'Exam marked as completed successfully and incentives updated!' });
   } catch (error) {
     // console.error('Error marking exam as completed:', error);
     res.status(500).json({ message: 'Failed to mark exam as completed!' });
   }
-}
+};
 
 export const deleteExam = async (req, res) => {
   try {
@@ -875,6 +881,11 @@ export const downloadResultsCSV = async (req, res) => {
   const { examId } = req.params;
 
   try {
+    const exam = await Examination.findById(examId);
+    if (!exam) {
+      return res.status(404).json({ message: 'Exam not found!' });
+    }
+
     const evaluations = await PeerEvaluation.find({ exam: examId, eval_status: 'completed' }).populate('student');
 
     const studentTotals = {};
@@ -1033,9 +1044,135 @@ export const getResultsAnalytics = async (req, res) => {
 export const getCompletedExamsForTeacher = async (req, res) => {
   try {
     const teacherId = req.user._id;
-    const exams = await Examination.find({ createdBy: teacherId, completed: true }).populate('batch');
+    const exams = await Examination.find({ createdBy: teacherId, completed: true })
+      .populate({
+        path: 'batch',
+        populate: {
+          path: 'course'
+        }
+      });
     res.status(200).json({ exams });
   } catch (error) {
     res.status(500).json({ message: 'Failed to get completed exams!' });
+  }
+};
+
+const calculateIncentivesForBatch = async (batchId, examId) => {
+  const PARTICIPATION_REWARD = 5;
+  const CORRECT_EVALUATION_REWARD = 2;
+
+  try {
+    // Get all students enrolled in the batch
+    const enrolledStudents = await Enrollment.find({ 
+      batch: batchId, 
+      status: 'active' 
+    }).populate('student');
+
+    // Get all evaluations for this exam
+    const evaluations = await PeerEvaluation.find({ exam: examId })
+      .populate('student evaluator');
+
+    for (const enrollment of enrolledStudents) {
+      const studentId = enrollment.student._id;
+      
+      // Check if student participated (has at least one evaluation as student)
+      const studentParticipated = evaluations.some(evals => 
+        evals.student._id.toString() === studentId.toString()
+      );
+
+      // Get evaluations done BY this student (as evaluator)
+      const evaluationsByStudent = evaluations.filter(evals => 
+        evals.evaluator && 
+        evals.evaluator._id.toString() === studentId.toString() &&
+        evals.eval_status === 'completed'
+      );
+
+      // Count correct evaluations (not flagged and evaluated by student, not TA/teacher)
+      const correctEvaluations = evaluationsByStudent.filter(evals => 
+        evals.ticket === 0 && // Not flagged
+        evals.evaluated_by.toString() === studentId.toString() // Evaluated by student
+      );
+
+      // Calculate rewards for this exam
+      let examRewards = 0;
+      if (studentParticipated) {
+        examRewards += PARTICIPATION_REWARD; // Participation reward
+      }
+      examRewards += correctEvaluations.length * CORRECT_EVALUATION_REWARD; // Evaluation rewards
+
+      // Update or create incentivization record
+      const incentiveRecord = await Incentivization.findOne({
+        batch: batchId,
+        student: studentId
+      });
+
+      if (incentiveRecord) {
+        // Update existing record
+        incentiveRecord.total_rewards += examRewards;
+        incentiveRecord.exam_count += 1;
+        incentiveRecord.total_evaluations += evaluationsByStudent.length;
+        incentiveRecord.correct_evaluations += correctEvaluations.length;
+        incentiveRecord.last_updated = new Date();
+        await incentiveRecord.save();
+      } else {
+        // Create new record
+        await Incentivization.create({
+          batch: batchId,
+          student: studentId,
+          total_rewards: examRewards,
+          exam_count: 1,
+          total_evaluations: evaluationsByStudent.length,
+          correct_evaluations: correctEvaluations.length
+        });
+      }
+    }
+
+    console.log(`Incentives updated for batch ${batchId} after completing exam ${examId}`);
+  } catch (error) {
+    console.error('Error calculating incentives:', error);
+  }
+};
+
+export const downloadIncentivesCSV = async (req, res) => {
+  const { batchId } = req.params;
+
+  try {
+    const incentives = await Incentivization.find({ batch: batchId })
+      .populate('student', 'name email')
+      .populate('batch', 'batchId');
+
+    if (!incentives.length) {
+      return res.status(404).json({ message: 'No incentive data found for this batch!' });
+    }
+
+    const csvData = incentives.map(incentive => ({
+      Student_Name: incentive.student.name,
+      Student_Email: incentive.student.email,
+      Batch_ID: incentive.batch.batchId,
+      Total_Rewards: incentive.total_rewards,
+      Exams_Completed: incentive.exam_count,
+      Total_Evaluations: incentive.total_evaluations,
+      Correct_Evaluations: incentive.correct_evaluations,
+      Accuracy_Percentage: incentive.total_evaluations > 0 ? 
+        ((incentive.correct_evaluations / incentive.total_evaluations) * 100).toFixed(2) : 0,
+      Last_Updated: incentive.last_updated.toLocaleDateString()
+    }));
+
+    const parser = new Parser({ 
+      fields: [
+        'Student_Name', 'Student_Email', 'Batch_ID', 'Total_Rewards', 
+        'Exams_Completed', 'Total_Evaluations', 'Correct_Evaluations', 
+        'Accuracy_Percentage', 'Last_Updated'
+      ] 
+    });
+    const csv = parser.parse(csvData);
+
+    res.header('Content-Type', 'text/csv');
+    res.attachment(`Batch_${batchId}_Incentives.csv`);
+    return res.send(csv);
+
+  } catch (error) {
+    console.error('Error downloading incentives CSV:', error);
+    res.status(500).json({ message: 'Failed to generate incentives CSV!' });
   }
 };

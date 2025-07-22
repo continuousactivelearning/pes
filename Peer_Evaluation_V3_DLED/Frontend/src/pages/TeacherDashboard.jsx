@@ -676,6 +676,33 @@ export default function TeacherDashboard() {
       });
   };
 
+  const handleDownloadIncentives = async (batchId) => {
+    try {
+      const token = localStorage.getItem("token");
+      const response = await fetch(`http://localhost:5000/api/teacher/download-incentives-csv/${batchId}`, {
+        method: "GET",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (response.ok) {
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `batch_${batchId}_incentives.csv`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
+      } else {
+        alert("Failed to download incentives!");
+      }
+    } catch (error) {
+      console.error("Error downloading incentives:", error);
+      alert("Error downloading incentives!");
+    }
+  };
+
   return (
     <div
       className={`teacher-dashboard-bg${sidebarOpen ? ' sidebar-open' : ''}`}
@@ -978,6 +1005,21 @@ export default function TeacherDashboard() {
                             >
                               Download List
                             </button>
+                            <button
+                              style={{
+                                padding: '0.5rem 1rem',
+                                borderRadius: '8px',
+                                backgroundColor: '#4b3c70',
+                                color: '#ffffff',
+                                border: 'none',
+                                fontSize: '0.95rem',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                              }}
+                              onClick={() => handleDownloadIncentives(course.batch._id)}
+                            >
+                              Incentives
+                            </button>
                           </div>
                           
                         </td>
@@ -1134,9 +1176,10 @@ export default function TeacherDashboard() {
 
       {examHistoryOverlayOpen && (
         <ExamHistoryOverlay
-          open={examHistoryOverlayOpen}
-          onClose={() => setExamHistoryOverlayOpen(false)}
-          exams={completedExams}
+          examHistoryOverlayOpen={examHistoryOverlayOpen}
+          examHistoryOverlayClose={() => setExamHistoryOverlayOpen(false)}
+          completedExams={completedExams}
+          handleDownloadResults={handleDownloadResults}
         />
       )}
 
