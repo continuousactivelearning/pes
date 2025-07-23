@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { data, useNavigate } from 'react-router-dom';
 import '../styles/Teacher/TeacherDashboard.css'; // Assuming you have a CSS file for styles
 import { containerStyle, sidebarStyle, mainStyle, contentStyle, sidebarToggleBtnStyle, buttonStyle, sectionHeading } from '../styles/Teacher/TeacherDashboard.js'; // Importing styles from JS file
 import { showMessage } from '../utils/Message'; // Assuming you have a utility for showing messages
@@ -695,11 +695,11 @@ export default function TeacherDashboard() {
         a.remove();
         window.URL.revokeObjectURL(url);
       } else {
-        alert("Failed to download incentives!");
+        const errorData = await response.json();
+        showMessage(errorData.message, 'error');
       }
     } catch (error) {
-      console.error("Error downloading incentives:", error);
-      alert("Error downloading incentives!");
+      showMessage(error.message || 'Failed to download incentives!', 'error');
     }
   };
 
@@ -1016,7 +1016,7 @@ export default function TeacherDashboard() {
                                 fontWeight: 'bold',
                                 cursor: 'pointer',
                               }}
-                              onClick={() => handleDownloadIncentives(course.batch._id)}
+                              onClick={() => handleDownloadIncentives(batch.id)}
                             >
                               Incentives
                             </button>

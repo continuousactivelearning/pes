@@ -8,6 +8,7 @@ import { UIDMap } from '../models/UIDMap.js';
 import { TA } from '../models/TA.js';
 import { PeerEvaluation } from '../models/PeerEvaluation.js';
 import { Statistics } from '../models/Statistics.js';
+import { Incentivization } from '../models/Incentivization.js';
 import csv from 'csv-parser';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
@@ -440,11 +441,14 @@ export const completeExam = async (req, res) => {
     exam.completed = true;
     await exam.save();
 
-    await calculateIncentivesForBatch(exam.batch, examId);
+    const incentiveResult = await calculateIncentivesForBatch(exam.batch, examId);
 
-    res.status(200).json({ message: 'Exam marked as completed successfully and incentives updated!' });
+    if (incentiveResult.success) {
+      res.status(200).json({ message: 'Exam marked as completed successfully and incentives updated!' });
+    } else {
+      res.status(200).json({ message: 'Exam marked as completed successfully, but failed to update incentives.' });
+    }
   } catch (error) {
-    // console.error('Error marking exam as completed:', error);
     res.status(500).json({ message: 'Failed to mark exam as completed!' });
   }
 };
@@ -1058,80 +1062,270 @@ export const getCompletedExamsForTeacher = async (req, res) => {
 };
 
 const calculateIncentivesForBatch = async (batchId, examId) => {
-  const PARTICIPATION_REWARD = 5;
-  const CORRECT_EVALUATION_REWARD = 2;
+  const PARTICIPATION_REWARD = 1;
+  const CORRECT_EVALUATION_REWARD = 5;
 
   try {
-    // Get all students enrolled in the batch
     const enrolledStudents = await Enrollment.find({ 
       batch: batchId, 
       status: 'active' 
     }).populate('student');
 
-    // Get all evaluations for this exam
     const evaluations = await PeerEvaluation.find({ exam: examId })
       .populate('student evaluator');
 
     for (const enrollment of enrolledStudents) {
       const studentId = enrollment.student._id;
       
-      // Check if student participated (has at least one evaluation as student)
       const studentParticipated = evaluations.some(evals => 
         evals.student._id.toString() === studentId.toString()
       );
 
-      // Get evaluations done BY this student (as evaluator)
       const evaluationsByStudent = evaluations.filter(evals => 
         evals.evaluator && 
         evals.evaluator._id.toString() === studentId.toString() &&
         evals.eval_status === 'completed'
       );
 
-      // Count correct evaluations (not flagged and evaluated by student, not TA/teacher)
       const correctEvaluations = evaluationsByStudent.filter(evals => 
-        evals.ticket === 0 && // Not flagged
-        evals.evaluated_by.toString() === studentId.toString() // Evaluated by student
+        evals.ticket === 0 &&
+        evals.evaluated_by &&
+        evals.evaluated_by.toString() === studentId.toString()
       );
 
-      // Calculate rewards for this exam
       let examRewards = 0;
       if (studentParticipated) {
-        examRewards += PARTICIPATION_REWARD; // Participation reward
+        examRewards += PARTICIPATION_REWARD;
       }
-      examRewards += correctEvaluations.length * CORRECT_EVALUATION_REWARD; // Evaluation rewards
+      examRewards += correctEvaluations.length * CORRECT_EVALUATION_REWARD;
 
-      // Update or create incentivization record
-      const incentiveRecord = await Incentivization.findOne({
-        batch: batchId,
-        student: studentId
-      });
-
-      if (incentiveRecord) {
-        // Update existing record
-        incentiveRecord.total_rewards += examRewards;
-        incentiveRecord.exam_count += 1;
-        incentiveRecord.total_evaluations += evaluationsByStudent.length;
-        incentiveRecord.correct_evaluations += correctEvaluations.length;
-        incentiveRecord.last_updated = new Date();
-        await incentiveRecord.save();
-      } else {
-        // Create new record
-        await Incentivization.create({
+      if (studentParticipated || evaluationsByStudent.length > 0) {
+        const incentiveRecord = await Incentivization.findOne({
           batch: batchId,
-          student: studentId,
-          total_rewards: examRewards,
-          exam_count: 1,
-          total_evaluations: evaluationsByStudent.length,
-          correct_evaluations: correctEvaluations.length
+          student: studentId
         });
+
+        if (incentiveRecord) {
+          incentiveRecord.total_rewards += examRewards;
+          incentiveRecord.exam_count += 1;
+          incentiveRecord.total_evaluations += evaluationsByStudent.length;
+          incentiveRecord.correct_evaluations += correctEvaluations.length;
+          incentiveRecord.last_updated = new Date();
+          await incentiveRecord.save();
+          
+          console.log(`Updated incentives for student ${enrollment.student.name}: +${examRewards} points (Total: ${incentiveRecord.total_rewards})`);
+        } else {
+          const newIncentive = await Incentivization.create({
+            batch: batchId,
+            student: studentId,
+            total_rewards: examRewards,
+            exam_count: 1,
+            total_evaluations: evaluationsByStudent.length,
+            correct_evaluations: correctEvaluations.length
+          });
+        }
       }
     }
+    return {
+      success: true,
+      message: 'Incentives calculated successfully!'
+    }
 
-    console.log(`Incentives updated for batch ${batchId} after completing exam ${examId}`);
   } catch (error) {
-    console.error('Error calculating incentives:', error);
+    return {
+      success: false,
+      message: 'Failed to calculate incentives!'
+    };
   }
 };
+
+// const calculateIncentivesForBatch = async (batchId, examId) => {
+//   const PARTICIPATION_REWARD = 1;
+//   const BASE_EVALUATION_REWARD = 2; // Base reward for completing an evaluation
+//   const ACCURACY_BONUS_MULTIPLIER = 3; // Multiplier for accuracy bonus
+//   const MAX_ACCURACY_BONUS = 5; // Maximum bonus points for perfect accuracy
+
+//   try {
+//     // Get exam statistics
+//     const examStats = await Statistics.findOne({ exam_id: examId });
+//     if (!examStats) {
+//       console.log('No statistics found for exam, using basic reward system');
+//       return calculateBasicIncentives(batchId, examId);
+//     }
+
+//     const enrolledStudents = await Enrollment.find({ 
+//       batch: batchId, 
+//       status: 'active' 
+//     }).populate('student');
+
+//     const evaluations = await PeerEvaluation.find({ exam: examId })
+//       .populate('student evaluator');
+
+//     // Calculate student averages for comparison
+//     const studentAverages = calculateStudentAverages(evaluations);
+
+//     for (const enrollment of enrolledStudents) {
+//       const studentId = enrollment.student._id;
+      
+//       const studentParticipated = evaluations.some(evals => 
+//         evals.student._id.toString() === studentId.toString()
+//       );
+
+//       const evaluationsByStudent = evaluations.filter(evals => 
+//         evals.evaluator && 
+//         evals.evaluator._id.toString() === studentId.toString() &&
+//         evals.eval_status === 'completed'
+//       );
+
+//       let examRewards = 0;
+      
+//       // Participation reward
+//       if (studentParticipated) {
+//         examRewards += PARTICIPATION_REWARD;
+//       }
+
+//       // Calculate accuracy-based rewards for evaluations
+//       let totalAccuracyScore = 0;
+//       let validEvaluations = 0;
+
+//       for (const evaluation of evaluationsByStudent) {
+//         // Skip flagged evaluations or those overridden by teacher/TA
+//         if (evaluation.ticket !== 0 || 
+//             !evaluation.evaluated_by || 
+//             evaluation.evaluated_by.toString() !== studentId.toString()) {
+//           continue;
+//         }
+
+//         const accuracyScore = calculateEvaluationAccuracy(
+//           evaluation, 
+//           studentAverages, 
+//           examStats
+//         );
+
+//         if (accuracyScore !== null) {
+//           totalAccuracyScore += accuracyScore;
+//           validEvaluations++;
+          
+//           // Base reward for completing evaluation
+//           examRewards += BASE_EVALUATION_REWARD;
+          
+//           // Accuracy bonus (0 to MAX_ACCURACY_BONUS based on how accurate the evaluation was)
+//           const accuracyBonus = accuracyScore * MAX_ACCURACY_BONUS;
+//           examRewards += accuracyBonus;
+//         }
+//       }
+
+//       // Only process if student has some activity
+//       if (studentParticipated || evaluationsByStudent.length > 0) {
+//         const incentiveRecord = await Incentivization.findOne({
+//           batch: batchId,
+//           student: studentId
+//         });
+
+//         if (incentiveRecord) {
+//           incentiveRecord.total_rewards += examRewards;
+//           incentiveRecord.exam_count += 1;
+//           incentiveRecord.total_evaluations += evaluationsByStudent.length;
+//           incentiveRecord.correct_evaluations += validEvaluations;
+          
+//           // Add new field for tracking accuracy
+//           if (!incentiveRecord.average_accuracy) {
+//             incentiveRecord.average_accuracy = 0;
+//           }
+          
+//           if (validEvaluations > 0) {
+//             const currentAccuracy = totalAccuracyScore / validEvaluations;
+//             incentiveRecord.average_accuracy = 
+//               ((incentiveRecord.average_accuracy * (incentiveRecord.exam_count - 1)) + currentAccuracy) / 
+//               incentiveRecord.exam_count;
+//           }
+          
+//           incentiveRecord.last_updated = new Date();
+//           await incentiveRecord.save();
+          
+//           console.log(`Updated incentives for student ${enrollment.student.name}: +${examRewards.toFixed(2)} points (Total: ${incentiveRecord.total_rewards.toFixed(2)}, Avg Accuracy: ${(incentiveRecord.average_accuracy * 100).toFixed(1)}%)`);
+//         } else {
+//           const avgAccuracy = validEvaluations > 0 ? totalAccuracyScore / validEvaluations : 0;
+          
+//           await Incentivization.create({
+//             batch: batchId,
+//             student: studentId,
+//             total_rewards: examRewards,
+//             exam_count: 1,
+//             total_evaluations: evaluationsByStudent.length,
+//             correct_evaluations: validEvaluations,
+//             average_accuracy: avgAccuracy
+//           });
+          
+//           console.log(`Created incentive record for student ${enrollment.student.name}: ${examRewards.toFixed(2)} points (Accuracy: ${(avgAccuracy * 100).toFixed(1)}%)`);
+//         }
+//       }
+//     }
+
+//     return {
+//       success: true,
+//       message: 'Incentives calculated successfully with accuracy-based rewards!'
+//     };
+
+//   } catch (error) {
+//     console.error('Error calculating accuracy-based incentives:', error);
+//     return {
+//       success: false,
+//       message: 'Failed to calculate incentives!'
+//     };
+//   }
+// };
+
+// const calculateStudentAverages = (evaluations) => {
+//   const studentTotals = {};
+  
+//   evaluations.forEach(evaluation => {
+//     if (evaluation.eval_status !== 'completed') return;
+    
+//     const studentId = evaluation.student._id.toString();
+//     const score = Array.isArray(evaluation.score) 
+//       ? evaluation.score.reduce((a, b) => a + b, 0) 
+//       : evaluation.score;
+    
+//     if (!studentTotals[studentId]) {
+//       studentTotals[studentId] = { total: 0, count: 0 };
+//     }
+    
+//     studentTotals[studentId].total += score;
+//     studentTotals[studentId].count += 1;
+//   });
+  
+//   const studentAverages = {};
+//   Object.keys(studentTotals).forEach(studentId => {
+//     studentAverages[studentId] = studentTotals[studentId].total / studentTotals[studentId].count;
+//   });
+  
+//   return studentAverages;
+// };
+
+// const calculateEvaluationAccuracy = (evaluation, studentAverages, examStats) => {
+//   try {
+//     const evaluatedStudentId = evaluation.student._id.toString();
+//     const evaluatedStudentAverage = studentAverages[evaluatedStudentId];
+    
+//     if (!evaluatedStudentAverage) return null;
+    
+//     const evaluationScore = Array.isArray(evaluation.score) 
+//       ? evaluation.score.reduce((a, b) => a + b, 0) 
+//       : evaluation.score;
+    
+//     const deviation = Math.abs(evaluationScore - evaluatedStudentAverage);
+    
+//     const normalizedDeviation = examStats.std_dev > 0 ? deviation / examStats.std_dev : 0;
+    
+//     const accuracyScore = Math.exp(-normalizedDeviation);
+    
+//     return Math.max(0, Math.min(1, accuracyScore));
+//   } catch (error) {
+//     console.error('Error calculating evaluation accuracy:', error);
+//     return null;
+//   }
+// };
 
 export const downloadIncentivesCSV = async (req, res) => {
   const { batchId } = req.params;
@@ -1172,7 +1366,6 @@ export const downloadIncentivesCSV = async (req, res) => {
     return res.send(csv);
 
   } catch (error) {
-    console.error('Error downloading incentives CSV:', error);
     res.status(500).json({ message: 'Failed to generate incentives CSV!' });
   }
 };

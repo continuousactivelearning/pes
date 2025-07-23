@@ -14,5 +14,4 @@ const IncentivizationSchema = new mongoose.Schema({
 
 IncentivizationSchema.index({ batch: 1, student: 1 }, { unique: true });
 
-const Incentivization = mongoose.model('Incentivization', IncentivizationSchema);
-export default Incentivization;
+export const Incentivization = mongoose.model('Incentivization', IncentivizationSchema);
