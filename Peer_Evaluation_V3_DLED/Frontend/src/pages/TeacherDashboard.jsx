@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { data, useNavigate } from 'react-router-dom';
-import '../styles/Teacher/TeacherDashboard.css'; // Assuming you have a CSS file for styles
-import { containerStyle, sidebarStyle, mainStyle, contentStyle, sidebarToggleBtnStyle, buttonStyle, sectionHeading } from '../styles/Teacher/TeacherDashboard.js'; // Importing styles from JS file
-import { showMessage } from '../utils/Message'; // Assuming you have a utility for showing messages
+import { FaBook, FaUsers, FaGraduationCap, FaLaptopCode } from 'react-icons/fa';
+import '../styles/Teacher/TeacherDashboard.css';
+import { containerStyle, sidebarStyle, mainStyle, contentStyle, sidebarToggleBtnStyle, buttonStyle, sectionHeading } from '../styles/Teacher/TeacherDashboard.js';
+import { showMessage } from '../utils/Message';
 import { AppContext } from '../utils/AppContext';
 import { useContext } from 'react';
 import ProfileMenu from '../components/User/ProfileMenu.jsx';
@@ -21,6 +22,7 @@ export default function TeacherDashboard() {
   const [activeTab, setActiveTab] = useState('home');
   const [user, setUser] = useState({ name: '', email: '', role: '' });
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [dashboardStats, setDashboardStats] = useState({courses: 0, batches: 0, enrolledStudents: 0, activeExams: 0});
   const [coursesAndBatches, setCoursesAndBatches] = useState([]);
   const [selectedCourseId, setSelectedCourseId] = useState('');
   const [filteredBatches, setFilteredBatches] = useState([]);
@@ -72,6 +74,36 @@ export default function TeacherDashboard() {
       })
       .catch(() => navigate('/login'));
   }, [navigate]);
+
+  useEffect(() => {
+    const fetchDashboardStats = async () => {
+      try {
+        const token = localStorage.getItem('token');
+        const response = await fetch('http://localhost:5000/api/teacher/dashboard-stats', {
+          method: 'GET',
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
+        const data = await response.json();
+
+        if (response.ok) {
+          setDashboardStats({
+            courses: data.courses || 0,
+            batches: data.batches || 0,
+            enrolledStudents: data.enrolledStudents || 0,
+            activeExams: data.activeExams || 0
+          });
+        }
+      } catch (error) {
+        console.error('Failed to fetch dashboard stats:', error);
+      }
+    };
+
+    if (activeTab === 'home') {
+      fetchDashboardStats();
+    }
+  }, [activeTab]);
 
   useEffect(() => {
     const fetchCoursesAndBatches = async () => {
@@ -813,8 +845,86 @@ export default function TeacherDashboard() {
           minWidth: '940px',
         }}>
           {activeTab === 'home' && (
-            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#3f3d56' }}>
-              <h2 style={{ ...sectionHeading, marginBottom: '2rem' }}>Welcome to the Teacher Dashboard</h2>
+            // <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#3f3d56' }}>
+            //   <h2 style={{ ...sectionHeading, marginBottom: '2rem' }}>Welcome to the Teacher Dashboard</h2>
+            // </div>
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', color: '#3f3d56' }}>
+              <h2 style={{ ...sectionHeading, textAlign: 'center', marginBottom: '3rem' }}>
+                Welcome to the Teacher Dashboard
+              </h2>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-around', 
+                width: '100%', 
+                gap: '2rem',
+                flexWrap: 'wrap',
+                alignItems: 'center'
+              }}>
+                
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '2rem 1.5rem', 
+                  borderRadius: '16px', 
+                  background: 'linear-gradient(135deg, #667eea, #764ba2)', 
+                  boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)', 
+                  width: '220px', 
+                  color: '#fff',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  cursor: 'pointer'
+                }}>
+                  <FaBook size={50} style={{ marginBottom: '1rem' }} />
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Total Courses</h3>
+                  <p style={{ fontWeight: 'bold', fontSize: '2rem', margin: 0 }}>{dashboardStats.courses}</p>
+                </div>
+
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '2rem 1.5rem', 
+                  borderRadius: '16px', 
+                  background: 'linear-gradient(135deg, #f093fb, #f5576c)', 
+                  boxShadow: '0 8px 20px rgba(240, 147, 251, 0.3)', 
+                  width: '220px', 
+                  color: '#fff',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  cursor: 'pointer'
+                }}>
+                  <FaGraduationCap size={50} style={{ marginBottom: '1rem' }} />
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Total Batches</h3>
+                  <p style={{ fontWeight: 'bold', fontSize: '2rem', margin: 0 }}>{dashboardStats.batches}</p>
+                </div>
+
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '2rem 1.5rem', 
+                  borderRadius: '16px', 
+                  background: 'linear-gradient(135deg, #4facfe, #00f2fe)', 
+                  boxShadow: '0 8px 20px rgba(79, 172, 254, 0.3)', 
+                  width: '220px', 
+                  color: '#fff',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  cursor: 'pointer'
+                }}>
+                  <FaUsers size={50} style={{ marginBottom: '1rem' }} />
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Enrolled Students</h3>
+                  <p style={{ fontWeight: 'bold', fontSize: '2rem', margin: 0 }}>{dashboardStats.enrolledStudents}</p>
+                </div>
+
+                <div style={{ 
+                  textAlign: 'center', 
+                  padding: '2rem 1.5rem', 
+                  borderRadius: '16px', 
+                  background: 'linear-gradient(135deg, #43cea2, #185a9d)', 
+                  boxShadow: '0 8px 20px rgba(67, 206, 162, 0.3)', 
+                  width: '220px', 
+                  color: '#fff',
+                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                  cursor: 'pointer'
+                }}>
+                  <FaLaptopCode size={50} style={{ marginBottom: '1rem' }} />
+                  <h3 style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Active Exams</h3>
+                  <p style={{ fontWeight: 'bold', fontSize: '2rem', margin: 0 }}>{dashboardStats.activeExams}</p>
+                </div>
+              </div>
             </div>
           )}
 

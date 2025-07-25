@@ -1,11 +1,12 @@
 import express from 'express';
 import { protect, adminOrTeacherOnly } from '../middleware/authMiddleware.js';
-import { assignTA, bulkUploadDocuments, completeExam, deassignTA, deleteExam, downloadIncentivesCSV, downloadPDF, downloadResultsCSV, flagEvaluations, getCompletedExamsForTeacher, getEnrolledStudents, getExamsForTeacher, getFlaggedEvaluationsForExam, getResultsAnalytics, getTeacherCoursesAndBatches, removeTicket, scheduleExam, sendEvaluation, studentsEnroll, updateEvaluation, updateExam } from '../controllers/teacherController.js';
+import { assignTA, bulkUploadDocuments, completeExam, deassignTA, deleteExam, downloadIncentivesCSV, downloadPDF, downloadResultsCSV, flagEvaluations, getCompletedExamsForTeacher, getDashboardStats, getEnrolledStudents, getExamsForTeacher, getFlaggedEvaluationsForExam, getResultsAnalytics, getTeacherCoursesAndBatches, removeTicket, scheduleExam, sendEvaluation, studentsEnroll, updateEvaluation, updateExam } from '../controllers/teacherController.js';
 import upload from '../utils/fileUpload.js'; // Assuming you have a fileUpload.js for handling file uploads
 
 const router = express.Router();
 // const upload = multer({ dest: 'uploads/' });
 
+router.get('/dashboard-stats', protect, adminOrTeacherOnly, getDashboardStats);
 router.post('/assign-ta', protect, adminOrTeacherOnly, assignTA);
 router.post('/deassign-ta', protect, adminOrTeacherOnly, deassignTA);
 router.get('/teacher-courses-batches', protect, adminOrTeacherOnly, getTeacherCoursesAndBatches);
