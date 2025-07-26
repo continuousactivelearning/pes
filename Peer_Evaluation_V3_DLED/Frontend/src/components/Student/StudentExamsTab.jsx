@@ -9,7 +9,8 @@ export default function StudentExamsTab({
   fileInputRefs,
   handleExamFileChange,
   handleExamFileUpload,
-  examFileMap
+  examFileMap,
+  handleExamHistory
 }) {
   return (
     <div
@@ -21,17 +22,48 @@ export default function StudentExamsTab({
         width: "100%",
       }}
     >
-      <h2
-        style={{
-          ...sectionHeading,
-          marginTop: 0,
-          marginBottom: "2rem",
-          textAlign: 'center',
-          color: "#3f3d56",
-        }}
-      >
-        Exams
-      </h2>
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        position: 'relative', 
+        marginBottom: '2rem',
+        width: '100%'
+      }}>
+        <h2
+          style={{
+            ...sectionHeading,
+            marginTop: 0,
+            marginBottom: "2rem",
+            textAlign: 'center',
+            color: "#3f3d56",
+          }}
+        >
+          Exams
+        </h2>
+        <button
+          onClick={handleExamHistory}
+          style={{
+            position: 'absolute',
+            right: 0,
+            background: '#4b3c70',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '8px',
+            padding: '0.6rem 1.2rem',
+            fontWeight: 'bold',
+            fontSize: '1rem',
+            cursor: 'pointer',
+            boxShadow: '0 2px 8px rgba(60,60,120,0.12)',
+            transition: 'background 0.2s'
+          }}
+          onMouseEnter={(e) => e.target.style.background = '#3a2d56'}
+          onMouseLeave={(e) => e.target.style.background = '#4b3c70'}
+        >
+          Exam History
+        </button>
+      </div>
+      
       <div style={{ marginBottom: "1rem" }}>
         <label style={{ fontSize: "1rem", fontWeight: 500 }}>
           Filter by Batch:{" "}

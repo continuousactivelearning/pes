@@ -1,5 +1,5 @@
 import express from 'express';
-import { getAllExamsForStudent, getAvailableCourses, getBatchesForCourse, getEnrolledBatches, getEnrolledCourses, getEvaluationsByBatchAndExam, getPeerResultsEvaluations, getResultsBatches, getResultsBatchExams, getStudentDashboardStats, raiseTicket, requestEnrollment, submitEvaluation, uploadExamDocument } from '../controllers/studentController.js';
+import { getAllExamsForStudent, getAvailableCourses, getBatchesForCourse, getCompletedExams, getEnrolledBatches, getEnrolledCourses, getEvaluationsByBatchAndExam, getPeerResultsEvaluations, getResultsBatches, getResultsBatchExams, getStudentDashboardStats, raiseTicket, requestEnrollment, submitEvaluation, uploadExamDocument } from '../controllers/studentController.js';
 import { protect } from '../middleware/authMiddleware.js';
 import upload from '../utils/fileUpload.js';
 
@@ -12,6 +12,7 @@ router.get('/course-batches/:courseId', protect, getBatchesForCourse);
 router.post('/request-enrollment', protect, requestEnrollment);
 router.get('/enrolled-batches', protect, getEnrolledBatches);
 router.get('/all-exams', protect, getAllExamsForStudent);
+router.get('/completed-exams', protect, getCompletedExams);
 router.post('/upload-exam-document', protect, upload.single('file'), uploadExamDocument);
 router.get('/evaluations', protect, getEvaluationsByBatchAndExam);
 router.post('/submit-evaluation', protect, submitEvaluation);

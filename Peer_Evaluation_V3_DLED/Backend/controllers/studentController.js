@@ -192,6 +192,40 @@ export const getAllExamsForStudent = async (req, res) => {
   }
 };
 
+export const getCompletedExams = async (req, res) => {
+  try {
+    const studentId = req.user._id;
+
+    const enrollments = await Enrollment.find({ 
+      student: studentId, 
+      status: 'active' 
+    }).populate('batch');
+
+    if (!enrollments.length) {
+      return res.status(200).json([]);
+    }
+
+    const batchIds = enrollments.map(enrollment => enrollment.batch._id);
+
+    const completedExams = await Examination.find({
+      batch: { $in: batchIds },
+      completed: true
+    })
+    .populate({
+      path: 'batch',
+      populate: {
+        path: 'course',
+        select: 'courseName'
+      }
+    })
+    .sort({ date: -1 });
+
+    res.status(200).json(completedExams);
+  } catch (error) {
+    res.status(500).json({ message: 'Failed to fetch completed exams' });
+  }
+};
+
 export const uploadExamDocument = async (req, res) => {
   let messages = '';
   try {

@@ -842,87 +842,106 @@ export default function TeacherDashboard() {
           margin: 'auto',
           display: 'block',
           padding: '3rem 4rem',
-          minWidth: '940px',
+          minWidth: '1060px',
         }}>
           {activeTab === 'home' && (
-            // <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', color: '#3f3d56' }}>
-            //   <h2 style={{ ...sectionHeading, marginBottom: '2rem' }}>Welcome to the Teacher Dashboard</h2>
-            // </div>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', height: '100%', color: '#3f3d56' }}>
               <h2 style={{ ...sectionHeading, textAlign: 'center', marginBottom: '3rem' }}>
                 Welcome to the Teacher Dashboard
               </h2>
               <div style={{ 
                 display: 'flex', 
-                justifyContent: 'space-around', 
+                justifyContent: 'space-between',
                 width: '100%', 
-                gap: '2rem',
-                flexWrap: 'wrap',
-                alignItems: 'center'
+                gap: '1rem',
+                flexWrap: 'nowrap',
+                alignItems: 'center',
+                maxWidth: '100%',
+                overflowX: 'hidden'
               }}>
                 
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '2rem 1.5rem', 
-                  borderRadius: '16px', 
-                  background: 'linear-gradient(135deg, #667eea, #764ba2)', 
-                  boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)', 
-                  width: '220px', 
-                  color: '#fff',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                  cursor: 'pointer'
-                }}>
-                  <FaBook size={50} style={{ marginBottom: '1rem' }} />
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Total Courses</h3>
-                  <p style={{ fontWeight: 'bold', fontSize: '2rem', margin: 0 }}>{dashboardStats.courses}</p>
+                <div 
+                  className="dashboard-card"
+                  style={{ 
+                    textAlign: 'center', 
+                    padding: '1.8rem 1.2rem',
+                    borderRadius: '16px',
+                    background: 'linear-gradient(135deg, #667eea, #764ba2)', 
+                    boxShadow: '0 8px 20px rgba(102, 126, 234, 0.3)', 
+                    width: 'calc(25% - 0.75rem)',
+                    minWidth: '180px',
+                    maxWidth: '220px',
+                    color: '#fff',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    cursor: 'pointer',
+                    flexShrink: 1
+                  }}>
+                  <FaBook size={45} style={{ marginBottom: '1rem' }} />
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Total Courses</h3>
+                  <p style={{ fontWeight: 'bold', fontSize: '1.8rem', margin: 0 }}>{dashboardStats.courses}</p>
                 </div>
 
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '2rem 1.5rem', 
-                  borderRadius: '16px', 
-                  background: 'linear-gradient(135deg, #f093fb, #f5576c)', 
-                  boxShadow: '0 8px 20px rgba(240, 147, 251, 0.3)', 
-                  width: '220px', 
-                  color: '#fff',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                  cursor: 'pointer'
-                }}>
-                  <FaGraduationCap size={50} style={{ marginBottom: '1rem' }} />
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Total Batches</h3>
-                  <p style={{ fontWeight: 'bold', fontSize: '2rem', margin: 0 }}>{dashboardStats.batches}</p>
+                <div 
+                  className="dashboard-card"
+                  style={{ 
+                    textAlign: 'center', 
+                    padding: '1.8rem 1.2rem',
+                    borderRadius: '16px', 
+                    background: 'linear-gradient(135deg, #f093fb, #f5576c)', 
+                    boxShadow: '0 8px 20px rgba(240, 147, 251, 0.3)', 
+                    width: 'calc(25% - 0.75rem)',
+                    minWidth: '180px',
+                    maxWidth: '220px',
+                    color: '#fff',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    cursor: 'pointer',
+                    flexShrink: 1
+                  }}>
+                  <FaGraduationCap size={45} style={{ marginBottom: '1rem' }} />
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Total Batches</h3>
+                  <p style={{ fontWeight: 'bold', fontSize: '1.8rem', margin: 0 }}>{dashboardStats.batches}</p>
                 </div>
 
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '2rem 1.5rem', 
-                  borderRadius: '16px', 
-                  background: 'linear-gradient(135deg, #4facfe, #00f2fe)', 
-                  boxShadow: '0 8px 20px rgba(79, 172, 254, 0.3)', 
-                  width: '220px', 
-                  color: '#fff',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                  cursor: 'pointer'
-                }}>
-                  <FaUsers size={50} style={{ marginBottom: '1rem' }} />
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Enrolled Students</h3>
-                  <p style={{ fontWeight: 'bold', fontSize: '2rem', margin: 0 }}>{dashboardStats.enrolledStudents}</p>
+                <div 
+                  className="dashboard-card"
+                  style={{ 
+                    textAlign: 'center', 
+                    padding: '1.8rem 1.2rem',
+                    borderRadius: '16px', 
+                    background: 'linear-gradient(135deg, #32cd32, #125e12)',
+                    boxShadow: '0 8px 20px rgba(79, 172, 254, 0.3)', 
+                    width: 'calc(25% - 0.75rem)',
+                    minWidth: '180px',
+                    maxWidth: '220px',
+                    color: '#fff',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    cursor: 'pointer',
+                    flexShrink: 1
+                  }}>
+                  <FaUsers size={45} style={{ marginBottom: '1rem' }} />
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Enrolled Students</h3>
+                  <p style={{ fontWeight: 'bold', fontSize: '1.8rem', margin: 0 }}>{dashboardStats.enrolledStudents}</p>
                 </div>
 
-                <div style={{ 
-                  textAlign: 'center', 
-                  padding: '2rem 1.5rem', 
-                  borderRadius: '16px', 
-                  background: 'linear-gradient(135deg, #43cea2, #185a9d)', 
-                  boxShadow: '0 8px 20px rgba(67, 206, 162, 0.3)', 
-                  width: '220px', 
-                  color: '#fff',
-                  transition: 'transform 0.3s ease, box-shadow 0.3s ease',
-                  cursor: 'pointer'
-                }}>
-                  <FaLaptopCode size={50} style={{ marginBottom: '1rem' }} />
-                  <h3 style={{ fontSize: '1.4rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Active Exams</h3>
-                  <p style={{ fontWeight: 'bold', fontSize: '2rem', margin: 0 }}>{dashboardStats.activeExams}</p>
+                <div 
+                  className="dashboard-card"
+                  style={{ 
+                    textAlign: 'center', 
+                    padding: '1.8rem 1.2rem',
+                    borderRadius: '16px', 
+                    background: 'linear-gradient(135deg, #43cea2, #185a9d)', 
+                    boxShadow: '0 8px 20px rgba(67, 206, 162, 0.3)', 
+                    width: 'calc(25% - 0.75rem)',
+                    minWidth: '180px',
+                    maxWidth: '220px',
+                    color: '#fff',
+                    transition: 'transform 0.3s ease, box-shadow 0.3s ease',
+                    cursor: 'pointer',
+                    flexShrink: 1
+                  }}>
+                  <FaLaptopCode size={45} style={{ marginBottom: '1rem' }} />
+                  <h3 style={{ fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Active Exams</h3>
+                  <p style={{ fontWeight: 'bold', fontSize: '1.8rem', margin: 0 }}>{dashboardStats.activeExams}</p>
                 </div>
               </div>
             </div>

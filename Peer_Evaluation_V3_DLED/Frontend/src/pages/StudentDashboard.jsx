@@ -8,6 +8,7 @@ import StudentExamsTab from '../components/Student/StudentExamsTab';
 import EvaluationsTable from '../components/Student/EvaluationTable';
 import ResultsTable from '../components/Student/ResultsTable';
 import PeerResultOverlay from '../components/Student/PeerResultOverlay';
+import StudentExamHistoryOverlay from '../components/Student/StudentExamHistoryOverlay';
 import TAPanel from '../components/TA/TAPanel';
 import TAEvalOverlay from '../components/TA/TAEvalOverlay';
 import { containerStyle, sidebarStyle, mainStyle, contentStyle, sidebarToggleBtnStyle, buttonStyle, sectionHeading } from '../styles/Student/StudentDashboard.js'
@@ -50,6 +51,8 @@ export default function StudentDashboard() {
   const [peerResultsForExam, setPeerResultsForExam] = useState([]);
   const [loadingTickets, setLoadingTickets] = useState({});
   const fileInputRefs = useRef({});
+  const [examHistoryOverlayOpen, setExamHistoryOverlayOpen] = useState(false);
+  const [completedExams, setCompletedExams] = useState([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -696,6 +699,30 @@ export default function StudentDashboard() {
     }
   };
 
+  const handleExamHistory = async () => {
+    await fetchCompletedExams();
+    setExamHistoryOverlayOpen(true);
+  };
+
+  const fetchCompletedExams = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5000/api/student/completed-exams', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const data = await response.json();
+      console.log('Completed exams data:', data);
+      if (Array.isArray(data)) {
+        setCompletedExams(data);
+      } else {
+        setCompletedExams([]);
+      }
+    } catch (error) {
+      console.error('Failed to fetch completed exams:', error);
+      setCompletedExams([]);
+    }
+  };
+
   const handleSidebarToggle = () => setSidebarOpen(open => !open);
 
   return (
@@ -914,6 +941,7 @@ export default function StudentDashboard() {
               handleExamFileChange={handleExamFileChange}
               handleExamFileUpload={handleExamFileUpload}
               examFileMap={examFileMap}
+              handleExamHistory={handleExamHistory}
             />
           )}
 
@@ -988,6 +1016,14 @@ export default function StudentDashboard() {
         setLoadingTickets={setLoadingTickets}
         handleRaiseTicket={handleRaiseTicket}
       />
+
+      {examHistoryOverlayOpen && (
+        <StudentExamHistoryOverlay
+          examHistoryOverlayOpen={examHistoryOverlayOpen}
+          examHistoryOverlayClose={() => setExamHistoryOverlayOpen(false)}
+          completedExams={completedExams}
+        />
+      )}
     </div>
   );
 }
