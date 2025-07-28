@@ -18,44 +18,69 @@ export default function StudentExamHistoryOverlay({
 
   return (
     <div
+      onClick={examHistoryOverlayClose}
       style={{
-        position: 'fixed',
+        position: "fixed",
         top: 0,
         left: 0,
-        right: 0,
-        bottom: 0,
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        zIndex: 1000,
+        width: "100vw",
+        height: "100vh",
+        background: "rgba(0, 0, 0, 0.5)",
+        color: "#4b3c70",
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        zIndex: 1001,
       }}
-      onClick={examHistoryOverlayClose}
     >
       <div
-        style={{
-          backgroundColor: '#fff',
-          borderRadius: '12px',
-          padding: '2rem',
-          maxWidth: '90vw',
-          maxHeight: '80vh',
-          width: '800px',
-          boxShadow: '0 10px 30px rgba(0, 0, 0, 0.3)',
-          position: 'relative',
-          overflowY: 'auto',
-        }}
         onClick={(e) => e.stopPropagation()}
+        style={{
+          background: "#fff",
+          padding: "2rem",
+          borderRadius: "8px",
+          boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
+          width: "90%",
+          maxWidth: "1000px",
+          height: "80%",
+          display: "flex",
+          flexDirection: "column",
+          gap: "2rem",
+          position: "relative",
+        }}
       >
-        {/* Header */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: '1.5rem',
-          borderBottom: '2px solid #f0f0f0',
-          paddingBottom: '1rem'
-        }}>
-          <h2 style={{
+        {/* Close Button */}
+        <button
+          onClick={examHistoryOverlayClose}
+          style={{
+            position: "absolute",
+            top: "0.5rem",
+            right: "0.5rem",
+            padding: "0.5rem 1rem",
+            borderRadius: "8px",
+            border: "none",
+            background: "#fc1717",
+            color: "#fff",
+            fontWeight: 200,
+            cursor: "pointer",
+            transition: "background 0.2s",
+          }}
+        >
+          <FaTimes style={{ fontSize: "1rem" }} />
+        </button>
+
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            marginTop: "1rem",
+            marginBottom: "1rem",
+          }}
+        >
+          <h2 style={{ 
+            textAlign: "center", 
+            flex: 1, 
             margin: 0,
             color: '#4b3c70',
             fontSize: '1.8rem',
@@ -63,153 +88,174 @@ export default function StudentExamHistoryOverlay({
           }}>
             Exam History
           </h2>
-          <button
-            onClick={examHistoryOverlayClose}
-            style={{
-                position: "absolute",
-                top: "0.5rem",
-                right: "0.5rem",
-                padding: "0.5rem 1rem",
-                borderRadius: "8px",
-                border: "none",
-                background: "#fc1717",
-                color: "#fff",
-                fontWeight: 200,
-                cursor: "pointer",
-                transition: "background 0.2s",
-            }}
-            >
-                <FaTimes style={{ fontSize: "1rem" }} />
-            </button>
         </div>
 
-        {/* Content */}
-        <div style={{ maxHeight: '50vh', overflowY: 'auto' }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            height: "85%",
+            width: "100%",
+            position: "relative",
+          }}
+        >
           {completedExams.length === 0 ? (
             <div style={{
-              textAlign: 'center',
-              padding: '3rem',
-              color: '#666'
+              display: "flex",
+              flexDirection: "column",
+              alignItems: "center",
+              justifyContent: "center",
+              height: "100%",
+              color: "#666"
             }}>
-              <div style={{ fontSize: '3rem', marginBottom: '1rem' }}>📝</div>
-              <h3 style={{ color: '#4b3c70', marginBottom: '0.5rem' }}>No Completed Exams</h3>
-              <p>You don't have any completed exams yet.</p>
+              <div style={{ fontSize: '4rem', marginBottom: '1rem' }}>📝</div>
+              <h3 style={{ color: '#4b3c70', marginBottom: '0.5rem', fontSize: '1.5rem' }}>
+                No Completed Exams
+              </h3>
+              <p style={{ fontSize: '1.1rem', textAlign: 'center' }}>
+                You don't have any completed exams yet.
+              </p>
             </div>
           ) : (
-            <table style={{
-              width: '100%',
-              borderCollapse: 'collapse',
-              background: '#fff',
-              borderRadius: '8px',
-              overflow: 'hidden',
-              boxShadow: '0 2px 8px rgba(75, 60, 112, 0.1)'
-            }}>
-              <thead style={{
-                backgroundColor: '#4b3c70',
-                color: '#ffffff'
+            <div
+              style={{
+                flex: 1,
+                overflowY: "auto",
+                paddingRight: "0.5rem",
+                border: "1px solid #e0e0e0",
+                borderRadius: "8px",
+              }}
+            >
+              <table style={{
+                width: "100%",
+                minWidth: "800px",
+                borderCollapse: "collapse",
+                background: "#fff",
+                fontSize: "0.9rem",
+                tableLayout: "auto",
               }}>
-                <tr>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>Exam Name</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>Course</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>Batch</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>Date</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>Duration</th>
-                  <th style={{ padding: '12px', textAlign: 'center' }}>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {completedExams.map((exam, index) => (
-                  <tr key={exam._id} style={{
-                    borderBottom: '1px solid #f0f0f0',
-                    transition: 'background 0.2s'
-                  }}
-                  onMouseEnter={(e) => e.target.parentNode.style.background = '#f8f9fa'}
-                  onMouseLeave={(e) => e.target.parentNode.style.background = 'white'}
-                  >
-                    <td style={{ 
-                      padding: '12px', 
-                      fontWeight: '500',
-                      color: '#2d3559'
-                    }}>
-                      {exam.name}
-                    </td>
-                    <td style={{ 
-                      padding: '12px', 
-                      color: '#2d3559'
-                    }}>
-                      {exam.batch.course.courseName}
-                    </td>
-                    <td style={{ 
-                      padding: '12px', 
-                      textAlign: 'center',
-                      color: '#666',
-                      fontSize: '0.9rem'
-                    }}>
-                      {exam.batch.batchId}
-                    </td>
-                    <td style={{ 
-                      padding: '12px', 
-                      textAlign: 'center',
-                      color: '#666'
-                    }}>
-                      {formatDate(exam.date)}
-                    </td>
-                    <td style={{ 
-                      padding: '12px', 
-                      textAlign: 'center',
-                      color: '#666'
-                    }}>
-                      {exam.duration} mins
-                    </td>
-                    <td style={{ 
-                      padding: '12px', 
-                      textAlign: 'center'
-                    }}>
-                      <span style={{
-                        padding: '0.25rem 0.75rem',
-                        borderRadius: '20px',
-                        background: '#e8f5e8',
-                        color: '#2d5016',
-                        fontSize: '0.85rem',
-                        fontWeight: '500'
-                      }}>
-                        ✅ Completed
-                      </span>
-                    </td>
+                <thead style={{
+                  backgroundColor: "#4b3c70",
+                  color: "#ffffff",
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 2,
+                }}>
+                  <tr>
+                    <th style={{ ...thCellStyle }}>Exam Name</th>
+                    <th style={{ ...thCellStyle }}>Course</th>
+                    <th style={{ ...thCellStyle }}>Batch</th>
+                    <th style={{ ...thCellStyle }}>Date</th>
+                    <th style={{ ...thCellStyle }}>Total Marks</th>
+                    <th style={{ ...thCellStyle }}>Duration</th>
+                    <th style={{ ...thCellStyle }}>Status</th>
+                    <th style={{ ...thCellStyle }}>Scored Marks</th>
+                    <th style={{ ...thCellStyle }}>Score(%)</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {completedExams.map((exam, index) => (
+                    <tr 
+                      key={exam._id} 
+                      style={{
+                        borderBottom: "1px solid #e0e0e0",
+                        transition: 'background 0.2s'
+                      }}
+                      onMouseEnter={(e) => e.currentTarget.style.background = '#f8f9fa'}
+                      onMouseLeave={(e) => e.currentTarget.style.background = 'white'}
+                    >
+                      <td style={{ ...tdCellStyle }}>
+                        {exam.name}
+                      </td>
+                      <td style={{ ...tdCellStyle }}>
+                        {exam.batch?.course?.courseName || 'Unknown Course'}
+                      </td>
+                      <td style={{ ...tdCellStyle }}>
+                        {exam.batch?.batchId || 'Unknown Batch'}
+                      </td>
+                      <td style={{ ...tdCellStyle }}>
+                        {formatDate(exam.date)}
+                      </td>
+                      <td style={{ ...tdCellStyle }}>
+                        {exam.totalMarks || 0}
+                      </td>
+                      <td style={{ ...tdCellStyle }}>
+                        {exam.duration} mins
+                      </td>
+                      <td style={{ ...tdCellStyle }}>
+                        <span style={{
+                          padding: "0.3rem 0.8rem",
+                          borderRadius: "15px",
+                          fontSize: "0.8rem",
+                          fontWeight: 600,
+                          backgroundColor: exam.completed ? '#d4edda' : '#f8d7da',
+                          color: exam.completed ? '#155724' : '#721c24',
+                        }}>
+                          {exam.completed ? 'Completed' : 'Not Completed'}
+                        </span>
+                      </td>
+                      <td style={{ ...tdCellStyle }}>
+                        {exam.aggregateMarks || 0}
+                      </td>
+                      <td style={{ ...tdCellStyle }}>
+                        {exam.percentage || 0}%
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {completedExams.length > 0 && (
+            <div
+              style={{
+                padding: "1rem",
+                marginTop: "1rem",
+                borderTop: "1px solid #ddd",
+                background: "#fff",
+                position: "relative",
+                bottom: 0,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                zIndex: 1,
+              }}
+            >
+              <div style={{ flex: 1, textAlign: "left" }}>
+                <label style={{ fontWeight: "bold", color: "#4b3c70" }}>
+                  Total Completed Exams: {completedExams.length}
+                </label>
+              </div>
+
+              <div style={{ flex: 1, textAlign: "center" }}>
+                <label style={{ fontWeight: "bold", color: "#4b3c70" }}>
+                </label>
+              </div>
+
+              <div style={{ flex: 1, textAlign: "right" }}>
+                <label style={{ fontWeight: "bold", color: "#4b3c70" }}>
+                  Latest: {completedExams.length > 0 ? formatDate(completedExams[0].date) : 'N/A'}
+                </label>
+              </div>
+            </div>
           )}
         </div>
-
-        {/* Footer */}
-        {/* <div style={{
-          marginTop: '1.5rem',
-          paddingTop: '1rem',
-          borderTop: '1px solid #f0f0f0',
-          textAlign: 'center'
-        }}>
-          <button
-            onClick={examHistoryOverlayClose}
-            style={{
-              background: '#4b3c70',
-              color: '#fff',
-              border: 'none',
-              borderRadius: '8px',
-              padding: '0.75rem 2rem',
-              fontSize: '1rem',
-              fontWeight: '500',
-              cursor: 'pointer',
-              transition: 'background 0.2s'
-            }}
-            onMouseEnter={(e) => e.target.style.background = '#3a2d56'}
-            onMouseLeave={(e) => e.target.style.background = '#4b3c70'}
-          >
-            Close
-          </button>
-        </div> */}
       </div>
     </div>
   );
 }
+
+const thCellStyle = {
+  padding: "12px 8px", 
+  textAlign: "center",
+  fontWeight: "bold",
+  fontSize: "1rem"
+};
+
+const tdCellStyle = {
+  padding: "12px 8px", 
+  textAlign: "center", 
+  fontWeight: 500,
+  color: "#4b3c70"
+};

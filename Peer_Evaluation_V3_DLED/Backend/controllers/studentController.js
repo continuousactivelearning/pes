@@ -220,7 +220,37 @@ export const getCompletedExams = async (req, res) => {
     })
     .sort({ date: -1 });
 
-    res.status(200).json(completedExams);
+    const examsWithMarks = await Promise.all(
+      completedExams.map(async (exam) => {
+        const evaluations = await PeerEvaluation.find({
+          exam: exam._id,
+          student: studentId,
+          eval_status: 'completed'
+        });
+
+        let aggregateMarks = 0;
+        let totalEvaluations = evaluations.length;
+
+        if (totalEvaluations > 0) {
+          const evaluationTotals = evaluations.map(evaluation => {
+            const totalMarksForEvaluation = evaluation.score.reduce((sum, mark) => sum + mark, 0);
+            return totalMarksForEvaluation;
+          });
+
+          const sumOfAllEvaluations = evaluationTotals.reduce((sum, total) => sum + total, 0);
+          aggregateMarks = sumOfAllEvaluations / totalEvaluations;
+        }
+
+        const examObj = exam.toObject();
+        examObj.aggregateMarks = Math.round(aggregateMarks * 100) / 100;
+        examObj.totalEvaluations = totalEvaluations;
+        examObj.percentage = exam.totalMarks > 0 ? Math.round((aggregateMarks / exam.totalMarks) * 100 * 100) / 100 : 0;
+
+        return examObj;
+      })
+    );
+
+    res.status(200).json(examsWithMarks);
   } catch (error) {
     res.status(500).json({ message: 'Failed to fetch completed exams' });
   }
