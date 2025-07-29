@@ -34,7 +34,6 @@ export const updateRole = async (req, res) => {
   }
 };
 
-// Add Course
 export const addCourse = async (req, res) => {
   const { courseId, courseName, openCourse, startDate, endDate } = req.body;
 
@@ -83,6 +82,65 @@ export const getCourses = async (req, res) => {
     console.error('Error fetching courses:', error);
     res.status(500).json({ message: 'Server error while fetching courses' });
   }
+};
+
+export const getCourseById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const course = await Course.findById(id);
+        
+        if (!course) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+        
+        res.json(course);
+    } catch (error) {
+        console.error('Error fetching course:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
+};
+
+// Update course by ID
+export const updateCourse = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const { courseId, courseName, openCourse, startDate, endDate } = req.body;
+
+        // Check if course exists
+        const existingCourse = await Course.findById(id);
+        if (!existingCourse) {
+            return res.status(404).json({ message: 'Course not found' });
+        }
+
+        // Check if courseId is being changed and if it already exists
+        if (courseId !== existingCourse.courseId) {
+            const duplicateCourse = await Course.findOne({ courseId });
+            if (duplicateCourse) {
+                return res.status(400).json({ message: 'Course ID already exists' });
+            }
+        }
+
+        // Update the course
+        const updatedCourse = await Course.findByIdAndUpdate(
+            id,
+            {
+                courseId,
+                courseName,
+                openCourse,
+                startDate,
+                endDate
+            },
+            { new: true }
+        );
+
+        res.json({ 
+            message: 'Course updated successfully', 
+            course: updatedCourse 
+        });
+    } catch (error) {
+        console.error('Error updating course:', error);
+        res.status(500).json({ message: 'Internal server error' });
+    }
 };
 
 export const getBatches = async (req, res) => {

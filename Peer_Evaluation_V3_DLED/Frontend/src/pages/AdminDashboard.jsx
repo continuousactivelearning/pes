@@ -22,11 +22,19 @@ export default function AdminDashboard() {
       startDate: '',
       endDate: ''
   });
+  const [editCourseId, setEditCourseId] = useState('');
+  const [editCourseDetails, setEditCourseDetails] = useState({
+      courseId: '',
+      courseName: '',
+      openCourse: false,
+      startDate: '',
+      endDate: ''
+  });
   const [batchDetails, setBatchDetails] = useState({
     batchId: '',
     instructor: '',
     course: '' // Updated batchDetails state to include course field
-});
+  });
   const [counts, setCounts] = useState({ teachers: 0, courses: 0, students: 0 });
   const { setRefreshApp } = useContext(AppContext);
   const [courseId, setCourseId] = useState('');
@@ -225,6 +233,86 @@ const handleCourseSubmit = async (event) => {
     showMessage('An error occurred while adding the course.', 'error');
     console.error(error);
   }
+};
+
+const handleEditCourseSelect = async (selectedCourseId) => {
+    setEditCourseId(selectedCourseId);
+    
+    if (!selectedCourseId) {
+        setEditCourseDetails({
+            courseId: '',
+            courseName: '',
+            openCourse: false,
+            startDate: '',
+            endDate: ''
+        });
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/api/admin/course/${selectedCourseId}`, {
+            method: 'GET',
+            headers: {
+                Authorization: `Bearer ${token}`,
+            },
+        });
+
+        if (response.ok) {
+            const course = await response.json();
+            setEditCourseDetails({
+                courseId: course.courseId,
+                courseName: course.courseName,
+                openCourse: course.openCourse,
+                startDate: course.startDate ? course.startDate.split('T')[0] : '',
+                endDate: course.endDate ? course.endDate.split('T')[0] : ''
+            });
+        } else {
+            showMessage('Failed to fetch course details', 'error');
+        }
+    } catch (error) {
+        showMessage('Error fetching course details', 'error');
+        console.error(error);
+    }
+};
+
+const handleCourseUpdate = async (event) => {
+    event.preventDefault();
+
+    if (!editCourseId) {
+        showMessage('Please select a course to edit', 'error');
+        return;
+    }
+
+    try {
+        const token = localStorage.getItem('token');
+        const response = await fetch(`http://localhost:5000/api/admin/update-course/${editCourseId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
+            body: JSON.stringify(editCourseDetails),
+        });
+
+        if (response.ok) {
+            showMessage('Course updated successfully!', 'success');
+            // Refresh courses list
+            const updatedCourses = courses.map(course => 
+                course.id === editCourseId 
+                    ? { ...course, courseId: editCourseDetails.courseId, name: editCourseDetails.courseName }
+                    : course
+            );
+            setCourses(updatedCourses);
+            setTimeout(() => setRefreshApp(true), 500);
+        } else {
+            const data = await response.json();
+            showMessage(`Error: ${data.message || 'Failed to update course'}`, 'error');
+        }
+    } catch (error) {
+        showMessage('An error occurred while updating the course', 'error');
+        console.error(error);
+    }
 };
 
 const handleCourseDelete = async (event) => {
@@ -591,10 +679,10 @@ useEffect(() => {
           
           {activeTab === 'course' && (
             <div className="course-manager" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-              <div className="add-course" style={{ width: '48%' }}>
+              <div className="add-course" style={{ width: '40%' }}>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'left', color: '#3f3d56' }}>Add New Course</h2>
                 <form onSubmit={handleCourseSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
                         <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="courseId">Course ID</label>
                         <input
                             type="text"
@@ -608,7 +696,7 @@ useEffect(() => {
                                 borderRadius: '12px',
                                 border: '1px solid  #5c5470',
                                 fontSize: '1rem',
-                                width: '300px',
+                                width: '200px',
                                 boxSizing: 'border-box',
                                 background: '#ffffff',
                                 color: ' #4b3c70',
@@ -616,7 +704,7 @@ useEffect(() => {
                         />
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
                         <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="courseName">Course Name</label>
                         <input
                             type="text"
@@ -630,7 +718,7 @@ useEffect(() => {
                                 borderRadius: '12px',
                                 border: '1px solid  #5c5470',
                                 fontSize: '1rem',
-                                width: '300px',
+                                width: '200px',
                                 boxSizing: 'border-box',
                                 background: '#ffffff',
                                 color: ' #4b3c70',
@@ -638,26 +726,47 @@ useEffect(() => {
                         />
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
                         <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="openCourse">Open Course</label>
-                        <input
-                            type="checkbox"
-                            id="openCourse"
-                            name="openCourse"
-                            checked={courseDetails.openCourse || false}
-                            onChange={(e) => setCourseDetails({ ...courseDetails, openCourse: e.target.checked })}
-                            style={{
-                                width: '20px',
-                                height: '20px',
-                                cursor: 'pointer',
-                                background: '#f0f0f0',
-                                border: '1px solid #5c5470',
-                                borderRadius: '4px',
-                            }}
-                        />
+                        <div style={{ position: 'relative', display: 'inline-block' }}>
+                          <input
+                              type="checkbox"
+                              id="openCourse"
+                              name="openCourse"
+                              checked={courseDetails.openCourse || false}
+                              onChange={(e) => setCourseDetails({ ...courseDetails, openCourse: e.target.checked })}
+                              style={{
+                                  width: '20px',
+                                  height: '20px',
+                                  cursor: 'pointer',
+                                  appearance: 'none',
+                                  WebkitAppearance: 'none',
+                                  MozAppearance: 'none',
+                                  background: courseDetails.openCourse ? '#4b3c70' : '#ffffff',
+                                  border: '2px solid #5c5470',
+                                  borderRadius: '4px',
+                                  outline: 'none',
+                                  transition: 'all 0.2s ease',
+                              }}
+                          />
+                          {courseDetails.openCourse && (
+                              <span style={{
+                                  position: 'absolute',
+                                  top: '1.5px',
+                                  left: '9px',
+                                  color: '#ffffff',
+                                  fontSize: '14px',
+                                  fontWeight: 'bold',
+                                  pointerEvents: 'none',
+                                  userSelect: 'none',
+                              }}>
+                                  ✓
+                              </span>
+                          )}
+                        </div>
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
                         <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="startDate">Course Start Date</label>
                         <input
                             type="date"
@@ -670,17 +779,20 @@ useEffect(() => {
                                 borderRadius: '12px',
                                 border: '1px solid  #5c5470',
                                 fontSize: '1rem',
-                                width: '300px',
+                                width: '200px',
                                 boxSizing: 'border-box',
                                 background: '#ffffff',
                                 color: ' #4b3c70',
                                 position: 'relative',
-                                zIndex: 9999,
+                                colorScheme: 'auto',
+                                // zIndex: 9999,
                             }}
+                            onFocus={(e) => e.target.style.colorScheme = 'light'}
+                            onBlur={(e) => e.target.style.colorScheme = 'auto'}
                         />
                     </div>
 
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
                         <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="endDate">Course End Date</label>
                         <input
                             type="date"
@@ -693,17 +805,18 @@ useEffect(() => {
                                 borderRadius: '12px',
                                 border: '1px solid  #5c5470',
                                 fontSize: '1rem',
-                                width: '300px',
+                                width: '200px',
                                 boxSizing: 'border-box',
                                 background: '#ffffff',
                                 color: ' #4b3c70',
                                 position: 'relative',
-                                zIndex: 9999,
-                            }}
+                                colorScheme: 'auto',
+                                // zIndex: 9999,
+                            }}                        
                         />
                     </div>
 
-                    <div style={{ display: 'flex', width: '100%', marginLeft: '150px' }}>
+                    <div style={{ display: 'flex', width: '100%', marginLeft: '100px' }}>
                         <button
                             type="submit"
                             style={{
@@ -724,10 +837,178 @@ useEffect(() => {
                     </div>
                 </form>
               </div>
+              
+              <div className="edit-course" style={{ width: '35%' }}>
+                <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>Edit Course</h2>                
+                <div style={{ marginBottom: '2rem' }}>
+                    <label style={{ color: '#3f3d56', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Select Course to Edit</label>
+                    <select
+                        value={editCourseId}
+                        onChange={(e) => handleEditCourseSelect(e.target.value)}
+                        style={{
+                            padding: '0.5rem',
+                            borderRadius: '12px',
+                            border: '1px solid #5c5470',
+                            fontSize: '1rem',
+                            width: '100%',
+                            boxSizing: 'border-box',
+                            background: '#ffffff',
+                            color: '#4b3c70',
+                        }}
+                    >
+                        <option value="">Select Course</option>
+                        {courses.map((course) => (
+                            <option key={course.id} value={course.id}>
+                                {course.courseId} - {course.name}
+                            </option>
+                        ))}
+                    </select>
+                </div>
 
-              <div className="delete-course" style={{ width: '48%', textAlign: 'right' }}>
+                {editCourseId && (
+                    <form onSubmit={handleCourseUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                            <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Course ID</label>
+                            <input
+                                type="text"
+                                value={editCourseDetails.courseId}
+                                onChange={(e) => setEditCourseDetails({ ...editCourseDetails, courseId: e.target.value })}
+                                style={{
+                                    padding: '0.5rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid #5c5470',
+                                    fontSize: '1rem',
+                                    width: '180px',
+                                    boxSizing: 'border-box',
+                                    background: '#ffffff',
+                                    color: '#4b3c70',
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                            <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Course Name</label>
+                            <input
+                                type="text"
+                                value={editCourseDetails.courseName}
+                                onChange={(e) => setEditCourseDetails({ ...editCourseDetails, courseName: e.target.value })}
+                                style={{
+                                    padding: '0.5rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid #5c5470',
+                                    fontSize: '1rem',
+                                    width: '180px',
+                                    boxSizing: 'border-box',
+                                    background: '#ffffff',
+                                    color: '#4b3c70',
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                            <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Open Course</label>
+                            <div style={{ position: 'relative', display: 'inline-block' }}>
+                                <input
+                                    type="checkbox"
+                                    checked={editCourseDetails.openCourse || false}
+                                    onChange={(e) => setEditCourseDetails({ ...editCourseDetails, openCourse: e.target.checked })}
+                                    style={{
+                                        width: '20px',
+                                        height: '20px',
+                                        cursor: 'pointer',
+                                        appearance: 'none',
+                                        WebkitAppearance: 'none',
+                                        MozAppearance: 'none',
+                                        background: editCourseDetails.openCourse ? '#4b3c70' : '#ffffff',
+                                        border: '2px solid #5c5470',
+                                        borderRadius: '4px',
+                                        outline: 'none',
+                                        transition: 'all 0.2s ease',
+                                    }}
+                                />
+                                {editCourseDetails.openCourse && (
+                                    <span style={{
+                                        position: 'absolute',
+                                        top: '1.5px',
+                                        left: '9px',
+                                        color: '#ffffff',
+                                        fontSize: '14px',
+                                        fontWeight: 'bold',
+                                        pointerEvents: 'none',
+                                        userSelect: 'none',
+                                    }}>
+                                        ✓
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                            <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Start Date</label>
+                            <input
+                                type="date"
+                                value={editCourseDetails.startDate || ''}
+                                onChange={(e) => setEditCourseDetails({ ...editCourseDetails, startDate: e.target.value })}
+                                style={{
+                                    padding: '0.5rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid #5c5470',
+                                    fontSize: '1rem',
+                                    width: '180px',
+                                    boxSizing: 'border-box',
+                                    background: '#ffffff',
+                                    color: '#4b3c70',
+                                    colorScheme: 'light',
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
+                            <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>End Date</label>
+                            <input
+                                type="date"
+                                value={editCourseDetails.endDate || ''}
+                                onChange={(e) => setEditCourseDetails({ ...editCourseDetails, endDate: e.target.value })}
+                                style={{
+                                    padding: '0.5rem',
+                                    borderRadius: '12px',
+                                    border: '1px solid #5c5470',
+                                    fontSize: '1rem',
+                                    width: '180px',
+                                    boxSizing: 'border-box',
+                                    background: '#ffffff',
+                                    color: '#4b3c70',
+                                    colorScheme: 'light',
+                                }}
+                            />
+                        </div>
+
+                        <div style={{ display: 'flex', width: '100%', justifyContent: 'center', marginTop: '1rem' }}>
+                            <button
+                                type="submit"
+                                style={{
+                                    background: '#5c5470',
+                                    border: 'none',
+                                    color: '#fff',
+                                    fontWeight: 600,
+                                    fontSize: '1rem',
+                                    padding: '0.5rem 1rem',
+                                    borderRadius: '8px',
+                                    cursor: 'pointer',
+                                    boxShadow: '0 2px 8px rgba(60,60,120,0.12)',
+                                    transition: 'background 0.2s',
+                                }}
+                            >
+                                Update Course
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </div>
+
+              <div className="delete-course" style={{ width: '30%', textAlign: 'right' }}>
                 <h2 style={{ fontSize: '1.8rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'right', color: '#3f3d56' }}>Delete Course</h2>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem', width: '100%' }}>
+                <div style={{ flexDirection: 'column', display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', gap: '1rem', width: '100%' }}>
                   <select
                     value={courseId}
                     onChange={(e) => setCourseId(e.target.value)}
@@ -736,7 +1017,7 @@ useEffect(() => {
                       borderRadius: '12px',
                       border: '1px solid #5c5470',
                       fontSize: '1rem',
-                      width: '300px',
+                      width: '200px',
                       boxSizing: 'border-box',
                       background: '#ffffff',
                       color: ' #4b3c70',
@@ -762,6 +1043,7 @@ useEffect(() => {
                       cursor: 'pointer',
                       boxShadow: '0 2px 8px rgba(60,60,120,0.12)',
                       transition: 'background 0.2s',
+                      width: '200px',
                     }}
                   >
                     Delete Course
