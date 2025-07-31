@@ -13,7 +13,7 @@ router.put('/update-course/:editCourseId', protect, adminOrTeacherOnly, updateCo
 router.get('/batches', protect, adminOrTeacherOnly, getBatches);
 router.post('/add-batch', protect, adminOrTeacherOnly, addBatch);
 router.get('/batch/:batchId', protect, adminOrTeacherOnly, getBatchById);
-router.put('/update-batch/:batchId', protect, adminOrTeacherOnly, updateBatch);
+router.put('/update-batch/:editBatchId', protect, adminOrTeacherOnly, updateBatch);
 router.get('/dashboard-counts', protect, adminOrTeacherOnly, getDashboardCounts);
 router.delete('/delete-course/:courseId', protect, adminOrTeacherOnly, deleteCourse);
 router.delete('/delete-batch/:batchId', protect, adminOrTeacherOnly, deleteBatch);

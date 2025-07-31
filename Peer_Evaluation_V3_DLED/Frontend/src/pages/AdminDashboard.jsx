@@ -33,7 +33,7 @@ export default function AdminDashboard() {
   const [batchDetails, setBatchDetails] = useState({
     batchId: '',
     instructor: '',
-    course: '' // Updated batchDetails state to include course field
+    course: ''
   });
   const [counts, setCounts] = useState({ teachers: 0, courses: 0, students: 0 });
   const { setRefreshApp } = useContext(AppContext);
@@ -81,10 +81,8 @@ export default function AdminDashboard() {
     navigate('/login');
   };
 
-  // Responsive sidebar toggle for mobile
   const handleSidebarToggle = () => setSidebarOpen(open => !open);
 
-  // Added functionality to handle the role update request.
   const handleRoleUpdate = async (event) => {
     event.preventDefault();
 
@@ -420,7 +418,7 @@ export default function AdminDashboard() {
         showMessage('Failed to fetch batch details!', 'error');
       }
     } catch (error) {
-      showMessage('Error fetching batch details!', 'error');
+      showMessage(error.message || 'An error occurred while fetching batch details!', 'error');
     }
   };
 
@@ -451,10 +449,10 @@ export default function AdminDashboard() {
         handleEditBatchSelect('');
         fetchBatches();
       } else {
-        showMessage(`Error: ${data.message || 'Failed to update batch'}`, 'error');
+        showMessage(`Error: ${data.message || 'Failed to update batch!'}`, 'error');
       }
     } catch (error) {
-      showMessage('An error occurred while updating the batch', 'error');
+      showMessage(`Error: ${error.message || 'An error occurred while updating the batch!'}`, 'error');
     }
   };
 
@@ -477,6 +475,7 @@ export default function AdminDashboard() {
       if (response.ok) {
         showMessage(data.message, 'success');
         fetchBatches();
+        handleEditBatchSelect('');
         // setBatches(batches.filter(batch => batch._id !== selectedBatchId));
         setSelectedBatchId('');
       } else {
@@ -679,8 +678,8 @@ export default function AdminDashboard() {
           {activeTab === 'role' && (
             <div style={{ display: 'flex', flexDirection: 'column', color: '#2d3559' }}>
               <h2 style={{ ...sectionHeading, marginTop: 0, marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>Role Manager</h2>
-              <p style={{textAlign: 'left', color: '#3f3d56' }}>Update the role of a user by providing their email ID and selecting a role.</p>
-              <form onSubmit={handleRoleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', maxWidth: '900px' }}>
+              <p style={{ fontWeight: 'bold', textAlign: 'left', color: '#3f3d56' }}>Update the role of a user by providing their User Email ID and selecting a new role.</p>
+              <form onSubmit={handleRoleUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '50%', maxWidth: '900px', border: '2px solid #5c5470', borderRadius: '12px', padding: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
                   <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px', textAlign: 'left' }} htmlFor="email">Email ID</label>
                   <input
@@ -749,12 +748,15 @@ export default function AdminDashboard() {
           {activeTab === 'course' && (
             <div style={{ width: '100%', minWidth: '1000px' }}>
               <h2 style={{ ...sectionHeading, marginTop: 0, marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>Course Manager</h2>
+              <p style={{ fontWeight: 'bold', textAlign: 'left', color: '#3f3d56', marginBottom: '2rem' }}>
+                You can add new courses, view existing courses, update course details, and delete courses.
+              </p>
               <div className="course-manager" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>
-                <div className="add-course" style={{ width: '40%', border: '2px solid #5c5470', borderRadius: '15px' }}>
+                <div className="add-course" style={{ width: '40%', border: '2px solid #5c5470', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', textAlign: 'center', color: '#3f3d56' }}>Add New Course</h3>
                   <form onSubmit={handleCourseSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', margin: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
-                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="courseId">Course ID</label>
+                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }} htmlFor="courseId">Course ID</label>
                           <input
                               type="text"
                               id="courseId"
@@ -767,7 +769,7 @@ export default function AdminDashboard() {
                                   borderRadius: '12px',
                                   border: '1px solid  #5c5470',
                                   fontSize: '1rem',
-                                  width: '200px',
+                                  width: '60%',
                                   boxSizing: 'border-box',
                                   background: '#ffffff',
                                   color: ' #4b3c70',
@@ -776,7 +778,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
-                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="courseName">Course Name</label>
+                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }} htmlFor="courseName">Course Name</label>
                           <input
                               type="text"
                               id="courseName"
@@ -789,7 +791,7 @@ export default function AdminDashboard() {
                                   borderRadius: '12px',
                                   border: '1px solid  #5c5470',
                                   fontSize: '1rem',
-                                  width: '200px',
+                                  width: '60%',
                                   boxSizing: 'border-box',
                                   background: '#ffffff',
                                   color: ' #4b3c70',
@@ -798,7 +800,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
-                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="openCourse">Open Course</label>
+                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }} htmlFor="openCourse">Open Course</label>
                           <div style={{ position: 'relative', display: 'inline-block' }}>
                             <input
                                 type="checkbox"
@@ -838,7 +840,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
-                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="startDate">Start Date</label>
+                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }} htmlFor="startDate">Start Date</label>
                           <input
                               type="date"
                               id="startDate"
@@ -850,13 +852,12 @@ export default function AdminDashboard() {
                                   borderRadius: '12px',
                                   border: '1px solid  #5c5470',
                                   fontSize: '1rem',
-                                  width: '200px',
+                                  width: '60%',
                                   boxSizing: 'border-box',
                                   background: '#ffffff',
                                   color: ' #4b3c70',
                                   position: 'relative',
                                   colorScheme: 'auto',
-                                  // zIndex: 9999,
                               }}
                               onFocus={(e) => e.target.style.colorScheme = 'light'}
                               onBlur={(e) => e.target.style.colorScheme = 'auto'}
@@ -864,7 +865,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%', textAlign: 'left' }}>
-                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px' }} htmlFor="endDate">End Date</label>
+                          <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }} htmlFor="endDate">End Date</label>
                           <input
                               type="date"
                               id="endDate"
@@ -876,18 +877,17 @@ export default function AdminDashboard() {
                                   borderRadius: '12px',
                                   border: '1px solid  #5c5470',
                                   fontSize: '1rem',
-                                  width: '200px',
+                                  width: '60%',
                                   boxSizing: 'border-box',
                                   background: '#ffffff',
                                   color: ' #4b3c70',
                                   position: 'relative',
                                   colorScheme: 'auto',
-                                  // zIndex: 9999,
                               }}                        
                           />
                       </div>
 
-                      <div style={{ display: 'flex', width: '100%', marginLeft: '100px' }}>
+                      <div style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center' }}>
                           <button
                               type="submit"
                               style={{
@@ -909,7 +909,7 @@ export default function AdminDashboard() {
                   </form>
                 </div>
                 
-                <div className="edit-course" style={{ width: '35%', marginLeft: '2rem', marginRight: '2rem', border: '2px solid #5c5470', borderRadius: '15px' }}>
+                <div className="edit-course" style={{ width: '35%', marginLeft: '2rem', marginRight: '2rem', border: '2px solid #5c5470', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>Edit Course</h3>
                   <div style={{ marginBottom: '2rem' }}>
                       <label style={{ color: '#3f3d56', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Select Course to Edit</label>
@@ -939,7 +939,7 @@ export default function AdminDashboard() {
                   {editCourseId && (
                       <form onSubmit={handleCourseUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', textAlign: 'left', margin: '0.5rem' }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Course ID</label>
+                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }}>Course ID</label>
                               <input
                                   type="text"
                                   value={editCourseDetails.courseId}
@@ -949,7 +949,7 @@ export default function AdminDashboard() {
                                       borderRadius: '12px',
                                       border: '1px solid #5c5470',
                                       fontSize: '1rem',
-                                      width: '180px',
+                                      width: '60%',
                                       boxSizing: 'border-box',
                                       background: '#ffffff',
                                       color: '#4b3c70',
@@ -958,7 +958,7 @@ export default function AdminDashboard() {
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Course Name</label>
+                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }}>Course Name</label>
                               <input
                                   type="text"
                                   value={editCourseDetails.courseName}
@@ -968,7 +968,7 @@ export default function AdminDashboard() {
                                       borderRadius: '12px',
                                       border: '1px solid #5c5470',
                                       fontSize: '1rem',
-                                      width: '180px',
+                                      width: '60%',
                                       boxSizing: 'border-box',
                                       background: '#ffffff',
                                       color: '#4b3c70',
@@ -977,7 +977,7 @@ export default function AdminDashboard() {
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Open Course</label>
+                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }}>Open Course</label>
                               <div style={{ position: 'relative', display: 'inline-block' }}>
                                   <input
                                       type="checkbox"
@@ -1015,7 +1015,7 @@ export default function AdminDashboard() {
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Start Date</label>
+                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }}>Start Date</label>
                               <input
                                   type="date"
                                   value={editCourseDetails.startDate || ''}
@@ -1025,7 +1025,7 @@ export default function AdminDashboard() {
                                       borderRadius: '12px',
                                       border: '1px solid #5c5470',
                                       fontSize: '1rem',
-                                      width: '180px',
+                                      width: '60%',
                                       boxSizing: 'border-box',
                                       background: '#ffffff',
                                       color: '#4b3c70',
@@ -1035,7 +1035,7 @@ export default function AdminDashboard() {
                           </div>
 
                           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>End Date</label>
+                              <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }}>End Date</label>
                               <input
                                   type="date"
                                   value={editCourseDetails.endDate || ''}
@@ -1045,7 +1045,7 @@ export default function AdminDashboard() {
                                       borderRadius: '12px',
                                       border: '1px solid #5c5470',
                                       fontSize: '1rem',
-                                      width: '180px',
+                                      width: '60%',
                                       boxSizing: 'border-box',
                                       background: '#ffffff',
                                       color: '#4b3c70',
@@ -1054,7 +1054,7 @@ export default function AdminDashboard() {
                               />
                           </div>
 
-                          <div style={{ display: 'flex', width: '100%', justifyContent: 'center', marginTop: '1rem' }}>
+                          <div style={{ display: 'flex', width: '100%', alignItems: 'center', justifyContent: 'center', marginTop: '1rem' }}>
                               <button
                                   type="submit"
                                   style={{
@@ -1077,7 +1077,7 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                <div className="delete-course" style={{ width: '30%', textAlign: 'right', border: '2px solid #5c5470', borderRadius: '15px' }}>
+                <div className="delete-course" style={{ width: '30%', textAlign: 'right', border: '2px solid #5c5470', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>Delete Course</h3>
                   <div style={{ flexDirection: 'column', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem', width: '100%', margin: '0.2rem', marginRight: '2rem' }}>
                     <select
@@ -1088,7 +1088,7 @@ export default function AdminDashboard() {
                         borderRadius: '12px',
                         border: '1px solid #5c5470',
                         fontSize: '1rem',
-                        width: '200px',
+                        width: '90%',
                         boxSizing: 'border-box',
                         background: '#ffffff',
                         color: ' #4b3c70',
@@ -1114,7 +1114,7 @@ export default function AdminDashboard() {
                         cursor: 'pointer',
                         boxShadow: '0 2px 8px rgba(60,60,120,0.12)',
                         transition: 'background 0.2s',
-                        width: '200px',
+                        width: '40%',
                       }}
                     >
                       Delete Course
@@ -1128,13 +1128,16 @@ export default function AdminDashboard() {
           {activeTab === 'batch' && (
             <div style={{ width: '100%', minWidth: '1000px' }}>
               <h2 style={{ ...sectionHeading, marginTop: 0, marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>Batch Manager</h2>
+              <p style={{ fontWeight: 'bold', textAlign: 'left', color: '#3f3d56', marginBottom: '2rem' }}>
+                You can add new batches, view existing batches, update batch details, and delete batches.
+              </p>
               <div className="batch-manager" style={{ display: 'flex', justifyContent: 'space-between', width: '100%' }}>              
-                <div className="add-batch" style={{ width: '35%', border: '2px solid #5c5470', borderRadius: '15px' }}>
+                <div className="add-batch" style={{ width: '35%', border: '2px solid #5c5470', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>Add New Batch</h3>
                   <form onSubmit={handleBatchSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', marginBottom: '2rem', margin: '0.5rem', textAlign: 'left' }}>
                     {/* Batch ID */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                      <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '100px' }} htmlFor="batchId">Batch ID</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '90%' }}>
+                      <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '42%' }} htmlFor="batchId">Batch ID</label>
                       <input
                         type="text"
                         id="batchId"
@@ -1147,7 +1150,7 @@ export default function AdminDashboard() {
                           borderRadius: '12px',
                           border: '1px solid  #5c5470',
                           fontSize: '1rem',
-                          width: '250px',
+                          width: '100%',
                           background: '#ffffff',
                           color: ' #4b3c70',
                         }}
@@ -1155,8 +1158,8 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Instructor */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                      <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '100px' }} htmlFor="instructor">Instructor</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '90%' }}>
+                      <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '40%' }} htmlFor="instructor">Instructor</label>
                       <select
                         id="instructor"
                         name="instructor"
@@ -1167,7 +1170,7 @@ export default function AdminDashboard() {
                           borderRadius: '12px',
                           border: '1px solid #5c5470',
                           fontSize: '1rem',
-                          width: '269px',
+                          width: '100%',
                           background: '#ffffff',
                           color: ' #4b3c70',
                         }}
@@ -1180,8 +1183,8 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* Course */}
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                      <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '100px' }} htmlFor="course">Course</label>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '90%' }}>
+                      <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '40%' }} htmlFor="course">Course</label>
                       <select
                         id="course"
                         name="course"
@@ -1192,7 +1195,7 @@ export default function AdminDashboard() {
                           borderRadius: '12px',
                           border: '1px solid #5c5470',
                           fontSize: '1rem',
-                          width: '269px',
+                          width: '100%',
                           background: '#ffffff',
                           color: ' #4b3c70',
                         }}
@@ -1227,7 +1230,7 @@ export default function AdminDashboard() {
                   </form>
                 </div>
 
-                <div className="edit-batch" style={{ width: '35%', marginLeft: '2rem', marginRight: '2rem', border: '2px solid #5c5470', borderRadius: '15px' }}>
+                <div className="edit-batch" style={{ width: '35%', marginLeft: '2rem', marginRight: '2rem', border: '2px solid #5c5470', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>Edit Batch</h3>
                   <div style={{ marginBottom: '2rem' }}>
                     <label style={{ color: '#3f3d56', fontWeight: 'bold', display: 'block', marginBottom: '0.5rem' }}>Select Batch to Edit</label>
@@ -1257,7 +1260,7 @@ export default function AdminDashboard() {
                   {editBatchId && (
                     <form onSubmit={handleBatchUpdate} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%', textAlign: 'left', margin: '0.5rem' }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                        <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Batch ID</label>
+                        <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }}>Batch ID</label>
                         <input
                           type="text"
                           value={editBatchDetails.batchId}
@@ -1267,7 +1270,7 @@ export default function AdminDashboard() {
                             borderRadius: '12px',
                             border: '1px solid #5c5470',
                             fontSize: '1rem',
-                            width: '180px',
+                            width: '60%',
                             boxSizing: 'border-box',
                             background: '#ffffff',
                             color: '#4b3c70',
@@ -1276,7 +1279,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                        <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Instructor</label>
+                        <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }}>Instructor</label>
                         <select
                           value={editBatchDetails.instructor}
                           onChange={(e) => setEditBatchDetails({ ...editBatchDetails, instructor: e.target.value })}
@@ -1285,7 +1288,7 @@ export default function AdminDashboard() {
                             borderRadius: '12px',
                             border: '1px solid #5c5470',
                             fontSize: '1rem',
-                            width: '180px',
+                            width: '60%',
                             boxSizing: 'border-box',
                             background: '#ffffff',
                             color: '#4b3c70',
@@ -1301,7 +1304,7 @@ export default function AdminDashboard() {
                       </div>
 
                       <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
-                        <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '120px' }}>Course</label>
+                        <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '30%' }}>Course</label>
                         <select
                           value={editBatchDetails.course}
                           onChange={(e) => setEditBatchDetails({ ...editBatchDetails, course: e.target.value })}
@@ -1310,7 +1313,7 @@ export default function AdminDashboard() {
                             borderRadius: '12px',
                             border: '1px solid #5c5470',
                             fontSize: '1rem',
-                            width: '180px',
+                            width: '60%',
                             boxSizing: 'border-box',
                             background: '#ffffff',
                             color: '#4b3c70',
@@ -1348,9 +1351,9 @@ export default function AdminDashboard() {
                   )}
                 </div>
 
-                <div className="delete-batch" style={{ width: '25%', border: '2px solid #5c5470', borderRadius: '15px' }}>
+                <div className="delete-batch" style={{ width: '25%', border: '2px solid #5c5470', borderRadius: '15px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>Delete Batch</h3>
-                  <div style={{ flexDirection: 'column', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem', width: '100%', margin: '0.5rem' }}>
+                  <div style={{ flexDirection: 'column', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '1rem', width: '95%', margin: '0.5rem' }}>
                     <select
                       value={selectedBatchId}
                       onChange={(e) => setSelectedBatchId(e.target.value)}
@@ -1359,7 +1362,7 @@ export default function AdminDashboard() {
                         borderRadius: '12px',
                         border: '1px solid #5c5470',
                         fontSize: '1rem',
-                        width: '225px',
+                        width: '90%',
                         background: '#ffffff',
                         color: ' #4b3c70',
                       }}
@@ -1381,7 +1384,7 @@ export default function AdminDashboard() {
                         fontSize: '1rem',
                         padding: '0.5rem 1rem',
                         borderRadius: '8px',
-                        width: '225px',
+                        width: '45%',
                         cursor: 'pointer',
                         boxShadow: '0 2px 8px rgba(60,60,120,0.12)',
                         transition: 'background 0.2s',
