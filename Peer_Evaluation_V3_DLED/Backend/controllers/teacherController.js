@@ -14,8 +14,8 @@ import csv from 'csv-parser';
 import fs from 'fs';
 import bcrypt from 'bcryptjs';
 import sendEmail from '../utils/sendEmail.js';
-import extractUserIdFromQR from '../utils/extractUserIdFromQR.js'; 
-import emailExistence from 'email-existence';
+import extractUserIdFromQR from '../utils/extractUserIdFromQR.js';
+import emailValidator from 'email-validator';
 import { Parser } from 'json2csv';
 import PDFDocument from 'pdfkit';
 import QRCode from 'qrcode';
@@ -220,12 +220,7 @@ export const studentsEnroll = async (req, res) => {
             return res.status(400).json({ message: `Missing name or email for one of the student.` });
           }
 
-          const emailIsValid = await new Promise((resolve) => {
-            emailExistence.check(student.email, (err, exists) => {
-              if (err) resolve(false);
-              else resolve(exists);
-            });
-          });
+          const emailIsValid = emailValidator.validate(student.email);
       
           if (!emailIsValid) {
             return res.status(400).json({ message: 'Email address does not exist or is invalid for one of the student.' });

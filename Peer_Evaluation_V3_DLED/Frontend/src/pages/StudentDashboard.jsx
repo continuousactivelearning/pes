@@ -711,14 +711,12 @@ export default function StudentDashboard() {
         headers: { Authorization: `Bearer ${token}` },
       });
       const data = await response.json();
-      console.log('Completed exams data:', data);
       if (Array.isArray(data)) {
         setCompletedExams(data);
       } else {
         setCompletedExams([]);
       }
     } catch (error) {
-      console.error('Failed to fetch completed exams:', error);
       setCompletedExams([]);
     }
   };

@@ -5,7 +5,6 @@ import crypto from 'crypto';
 import { User } from '../models/User.js';
 import sendEmail from '../utils/sendEmail.js';
 import { Course } from '../models/Course.js';
-import emailExistence from 'email-existence';
 import { Batch } from '../models/Batch.js';
 import { Enrollment } from '../models/Enrollment.js';
 import { Examination } from '../models/Examination.js';

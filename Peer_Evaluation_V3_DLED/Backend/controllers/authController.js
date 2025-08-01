@@ -5,7 +5,7 @@ import crypto from 'crypto';
 import { User } from '../models/User.js';
 import sendEmail from '../utils/sendEmail.js';
 import { Course } from '../models/Course.js';
-import emailExistence from 'email-existence';
+import emailValidator from 'email-validator';
 import { Batch } from '../models/Batch.js';
 
 // Generate JWT token
@@ -15,68 +15,356 @@ const generateToken = (id, role) => {
   });
 };
 
-// Register User
-export const registerUser = async (req, res) => {
+const generateVerificationCode = () => {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+};
+
+// Store temporary user data in memory (you can use Redis for production)
+const tempUserStore = new Map();
+
+// Send verification code - Step 1 of registration
+export const sendVerificationCode = async (req, res) => {
   const { name, email, password, role } = req.body;
 
+  if (!name || !email || !password || !role) {
+    return res.status(400).json({ message: 'All fields are required!' });
+  }
+
   try {
-    const userExists = await User.findOne({ email });
-    if (userExists) {
-      return res.status(400).json({ message: 'User already exists.' });
-    }
-
-    // Verify email existence
-    const emailIsValid = await new Promise((resolve) => {
-      emailExistence.check(email, (err, exists) => {
-        if (err) resolve(false);
-        else resolve(exists);
-      });
-    });
-
+    // Validate email format
+    const emailIsValid = emailValidator.validate(email);
     if (!emailIsValid) {
-      return res.status(400).json({ message: 'Email address does not exist or is invalid.' });
+      return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
 
-    const hashedPassword = await bcrypt.hash(password, 10);
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'User with this email already exists!' });
+    }
 
-    const user = await User.create({
+    // Generate 4-digit verification code
+    const verificationCode = generateVerificationCode();
+    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Store user data temporarily (NOT in database)
+    tempUserStore.set(email, {
       name,
       email,
-      password: hashedPassword,
+      password,
       role,
+      verificationCode,
+      verificationExpires,
+      timestamp: Date.now()
     });
 
-    // Send welcome email
-    const welcomeHtml = `
-      <div style="font-family:Arial,sans-serif; padding:20px;">
-        <h2>Welcome to the Peer Evaluation System</h2>
-        <p>Hi ${user.name},</p>
-        <p>Thank you for registering on the <strong>Peer Evaluation System</strong>.</p>
-        <p>Your account has been successfully created with the following details:</p>
-        <ul>
-          <li><strong>Email:</strong> ${user.email}</li>
-          <li><strong>Role:</strong> ${user.role}</li>
-        </ul>
-        <p>We're excited to have you onboard!</p>
-        <br/>
-        <p>Best regards,<br/>PES Team</p>
+    // Clean up expired entries (optional cleanup)
+    for (const [key, value] of tempUserStore.entries()) {
+      if (value.verificationExpires < new Date()) {
+        tempUserStore.delete(key);
+      }
+    }
+
+    // Send verification email
+    const verificationHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4b3c70; margin: 0; font-size: 28px;">Email Verification</h1>
+            <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">Peer Evaluation System</p>
+          </div>
+          
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">Hi ${name},</h2>
+            <p style="color: #555; line-height: 1.6; margin: 0 0 15px 0;">
+              Thank you for registering with the Peer Evaluation System. To complete your registration, please verify your email address using the verification code below:
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="background-color: #4b3c70; color: white; font-size: 32px; font-weight: bold; padding: 20px; border-radius: 8px; letter-spacing: 8px; display: inline-block;">
+              ${verificationCode}
+            </div>
+          </div>
+
+          <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #856404; margin: 0; font-size: 14px;">
+              <strong>⚠️ Important:</strong> This verification code will expire in 10 minutes. If you didn't request this verification, please ignore this email.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #888; font-size: 14px; margin: 0;">
+              Best regards,<br/>
+              <strong>PES Team</strong>
+            </p>
+          </div>
+        </div>
       </div>
     `;
 
-    await sendEmail(user.email, 'Welcome to Peer Evaluation System', welcomeHtml);
+    await sendEmail(email, 'Email Verification Code - Peer Evaluation System', verificationHtml);
+
+    res.status(200).json({ 
+      message: 'Verification code sent to your email successfully!',
+      email: email,
+      requiresVerification: true
+    });
+
+  } catch (error) {
+    console.error('Error sending verification code:', error);
+    res.status(500).json({ message: 'Failed to send verification code. Please try again!' });
+  }
+};
+
+// Register User - Step 2: Verify code and create user
+export const registerUser = async (req, res) => {
+  const { email, verificationCode } = req.body;
+
+  if (!email || !verificationCode) {
+    return res.status(400).json({ message: 'Email and verification code are required!' });
+  }
+
+  try {
+    // Get temporary user data from memory
+    const tempUserData = tempUserStore.get(email);
+
+    if (!tempUserData) {
+      return res.status(404).json({ 
+        message: 'Registration session not found! Please start the registration process again.',
+        redirectToRegister: true
+      });
+    }
+
+    // Check if verification code has expired
+    if (tempUserData.verificationExpires < new Date()) {
+      tempUserStore.delete(email); // Clean up expired data
+      return res.status(400).json({ 
+        message: 'Verification code has expired! Please start the registration process again.',
+        redirectToRegister: true
+      });
+    }
+
+    // Check if verification code matches
+    if (tempUserData.verificationCode !== verificationCode) {
+      return res.status(400).json({ message: 'Invalid verification code!' });
+    }
+
+    // Check if user was created while we were verifying (double-check)
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      tempUserStore.delete(email); // Clean up
+      return res.status(400).json({ message: 'User with this email already exists!' });
+    }
+
+    // Hash the password
+    const hashedPassword = await bcrypt.hash(tempUserData.password, 10);
+
+    // Create the user in database
+    const user = await User.create({
+      name: tempUserData.name,
+      email: tempUserData.email,
+      password: hashedPassword,
+      role: tempUserData.role,
+    });
+
+    // Clean up temporary data
+    tempUserStore.delete(email);
+
+    // Send welcome email
+    const welcomeHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4b3c70; margin: 0; font-size: 28px;">🎉 Welcome to PES!</h1>
+            <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">Peer Evaluation System</p>
+          </div>
+          
+          <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #155724; margin: 0 0 15px 0; font-size: 20px;">Registration Successful! ✅</h2>
+            <p style="color: #155724; margin: 0;">Your email has been verified and your account has been created successfully.</p>
+          </div>
+
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h3 style="color: #333; margin: 0 0 15px 0;">Account Details:</h3>
+            <ul style="color: #555; line-height: 1.8; margin: 0; padding-left: 20px;">
+              <li><strong>Name:</strong> ${user.name}</li>
+              <li><strong>Email:</strong> ${user.email}</li>
+              <li><strong>Role:</strong> ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</li>
+            </ul>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <p style="color: #555; line-height: 1.6; margin: 0;">
+              You can now log in to the Peer Evaluation System and start exploring the features available to you.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #888; font-size: 14px; margin: 0;">
+              Welcome aboard!<br/>
+              <strong>PES Team</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    try {
+      await sendEmail(user.email, 'Welcome to Peer Evaluation System! 🎉', welcomeHtml);
+    } catch (emailError) {
+      console.log('Welcome email failed to send:', emailError.message);
+      // Don't fail the registration if welcome email fails
+    }
 
     res.status(201).json({
+      message: 'Registration completed successfully!',
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
       token: generateToken(user._id, user.role),
     });
+
   } catch (error) {
     console.error('Registration error:', error.message);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ message: 'Server error during registration. Please try again!' });
   }
 };
+
+// Resend verification code
+export const resendVerificationCode = async (req, res) => {
+  const { email } = req.body;
+
+  if (!email) {
+    return res.status(400).json({ message: 'Email is required!' });
+  }
+
+  try {
+    // Get temporary user data from memory
+    const tempUserData = tempUserStore.get(email);
+
+    if (!tempUserData) {
+      return res.status(404).json({ 
+        message: 'Registration session not found! Please start the registration process again.',
+        redirectToRegister: true
+      });
+    }
+
+    // Generate new verification code
+    const verificationCode = generateVerificationCode();
+    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+    // Update temporary data with new code
+    tempUserData.verificationCode = verificationCode;
+    tempUserData.verificationExpires = verificationExpires;
+    tempUserStore.set(email, tempUserData);
+
+    // Send new verification email
+    const verificationHtml = `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4b3c70; margin: 0; font-size: 28px;">New Verification Code</h1>
+            <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">Peer Evaluation System</p>
+          </div>
+          
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">Hi ${tempUserData.name},</h2>
+            <p style="color: #555; line-height: 1.6; margin: 0 0 15px 0;">
+              Here's your new verification code to complete your registration:
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 30px 0;">
+            <div style="background-color: #4b3c70; color: white; font-size: 32px; font-weight: bold; padding: 20px; border-radius: 8px; letter-spacing: 8px; display: inline-block;">
+              ${verificationCode}
+            </div>
+          </div>
+
+          <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #856404; margin: 0; font-size: 14px;">
+              <strong>⚠️ Important:</strong> This verification code will expire in 10 minutes.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #888; font-size: 14px; margin: 0;">
+              Best regards,<br/>
+              <strong>PES Team</strong>
+            </p>
+          </div>
+        </div>
+      </div>
+    `;
+
+    await sendEmail(email, 'New Verification Code - Peer Evaluation System', verificationHtml);
+
+    res.status(200).json({ message: 'New verification code sent successfully!' });
+
+  } catch (error) {
+    console.error('Error resending verification code:', error);
+    res.status(500).json({ message: 'Failed to resend verification code. Please try again!' });
+  }
+};
+
+// Register User
+// export const registerUser = async (req, res) => {
+//   const { name, email, password, role } = req.body;
+
+//   try {
+//     const userExists = await User.findOne({ email });
+//     if (userExists) {
+//       return res.status(400).json({ message: 'User already exists.' });
+//     }
+
+//     // Verify email existence
+//     const emailIsValid = emailValidator.validate(email);
+
+//     if (!emailIsValid) {
+//       return res.status(400).json({ message: 'Email address does not exist or is invalid.' });
+//     }
+
+//     const hashedPassword = await bcrypt.hash(password, 10);
+
+//     const user = await User.create({
+//       name,
+//       email,
+//       password: hashedPassword,
+//       role,
+//     });
+
+//     // Send welcome email
+//     const welcomeHtml = `
+//       <div style="font-family:Arial,sans-serif; padding:20px;">
+//         <h2>Welcome to the Peer Evaluation System</h2>
+//         <p>Hi ${user.name},</p>
+//         <p>Thank you for registering on the <strong>Peer Evaluation System</strong>.</p>
+//         <p>Your account has been successfully created with the following details:</p>
+//         <ul>
+//           <li><strong>Email:</strong> ${user.email}</li>
+//           <li><strong>Role:</strong> ${user.role}</li>
+//         </ul>
+//         <p>We're excited to have you onboard!</p>
+//         <br/>
+//         <p>Best regards,<br/>PES Team</p>
+//       </div>
+//     `;
+
+//     await sendEmail(user.email, 'Welcome to Peer Evaluation System', welcomeHtml);
+
+//     res.status(201).json({
+//       _id: user._id,
+//       name: user.name,
+//       email: user.email,
+//       role: user.role,
+//       token: generateToken(user._id, user.role),
+//     });
+//   } catch (error) {
+//     console.error('Registration error:', error.message);
+//     res.status(500).json({ message: error.message });
+//   }
+// };
 
 // Login
 export const loginUser = async (req, res) => {

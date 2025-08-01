@@ -109,7 +109,6 @@ export default function AdminDashboard() {
 
       if (response.ok) {
         showMessage('Role updated successfully!', 'success');
-        // Optionally, you can reset the form fields after successful update
         document.getElementById('email').value = '';
         document.getElementById('role').value = '';
         setTimeout(() => setRefreshApp(true), 1000); // Adds a 1-second delay before refreshing the app
@@ -118,7 +117,6 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       showMessage('An error occurred while updating the role.', 'error');
-      console.error(error);
     }
   };
 
@@ -1114,7 +1112,7 @@ export default function AdminDashboard() {
                         cursor: 'pointer',
                         boxShadow: '0 2px 8px rgba(60,60,120,0.12)',
                         transition: 'background 0.2s',
-                        width: '40%',
+                        width: '60%',
                       }}
                     >
                       Delete Course
@@ -1384,7 +1382,7 @@ export default function AdminDashboard() {
                         fontSize: '1rem',
                         padding: '0.5rem 1rem',
                         borderRadius: '8px',
-                        width: '45%',
+                        width: '55%',
                         cursor: 'pointer',
                         boxShadow: '0 2px 8px rgba(60,60,120,0.12)',
                         transition: 'background 0.2s',

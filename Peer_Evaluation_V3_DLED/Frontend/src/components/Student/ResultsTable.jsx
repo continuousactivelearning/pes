@@ -17,7 +17,7 @@ const ResultsTable = ({
       width: "100%",
     }}>
       {/* Batch Dropdown */}
-      {resultBatches.length > 0 && (
+      {resultBatches.length > 0 ? (
         <div style={{
           display: "flex",
           gap: "1rem",
@@ -51,6 +51,28 @@ const ResultsTable = ({
               </option>
             ))}
           </select>
+        </div>
+      ) : (
+          <div style={{
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "2rem",
+          backgroundColor: "#f8f9fa",
+          border: "1px solid #e0e0e0",
+          borderRadius: "8px",
+          marginBottom: "1rem",
+          width: "100%",
+          maxWidth: "1000px",
+        }}>
+          <p style={{
+            fontSize: "1rem",
+            textAlign: "center",
+            fontStyle: "italic",
+          }}>
+            You are not currently enrolled in any courses. Please contact your instructor or administrator for course enrollment to access your exam results.
+          </p>
         </div>
       )}
 
