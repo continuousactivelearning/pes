@@ -33,7 +33,7 @@ export const getDashboardStats = async (req, res) => {
 
     const batchIds = batches.map(batch => batch._id);
 
-    const courseIds = [...new Set(batches.map(batch => batch.course))];
+    const courseIds = [...new Set(batches.map(batch => batch.course.toString()))];
 
     const enrolledStudents = await Enrollment.countDocuments({ batch: { $in: batchIds }, status: 'active' });
 
@@ -42,7 +42,6 @@ export const getDashboardStats = async (req, res) => {
     res.status(200).json({ courses: courseIds.length, batches: batches.length, enrolledStudents: enrolledStudents, activeExams: activeExams });
 
   } catch (error) {
-    console.error('Error fetching dashboard stats:', error);
     res.status(500).json({ message: 'Failed to fetch dashboard statistics!' });
   }
 };
@@ -1048,8 +1047,8 @@ export const getResultsAnalytics = async (req, res) => {
     // Stacked bar: Evaluation status per student
     let completed = 0, pending = 0, flagged = 0;
     evaluations.forEach(ev => {
-      if (ev.eval_status === "completed") completed += 1;
-      else if (ev.eval_status === "pending") pending += 1;
+      if (ev.eval_status === "completed" && ev.ticket === 0) completed += 1;
+      else if (ev.eval_status === "pending" && ev.ticket === 0) pending += 1;
       if (ev.ticket === 1 || ev.ticket === 2) flagged += 1;
     });
     const evalStatus = { completed, pending, flagged };

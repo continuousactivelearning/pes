@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { toast } from 'react-toastify';
+import { showMessage } from '../../utils/Message';
 import '../../styles/User/VerificationModal.css';
 
 const VerificationModal = ({ email, onSuccess, onClose }) => {
@@ -13,7 +13,7 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
       setTimeLeft((prevTime) => {
         if (prevTime <= 1) {
           clearInterval(timer);
-          toast.error('Verification code expired. Please start registration again.');
+          showMessage('Verification code expired. Please start registration again.', 'error');
           onClose();
           return 0;
         }
@@ -34,41 +34,44 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
     e.preventDefault();
     
     if (verificationCode.length !== 4) {
-      toast.error('Please enter a valid 4-digit verification code');
+      showMessage('Please enter a valid 4-digit verification code', 'error');
       return;
     }
 
     setLoading(true);
 
     try {
-      const response = await fetch('/api/auth/register', {
+      const response = await fetch('http://localhost:5000/api/auth/verify-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           email,
-          verificationCode
+          code: verificationCode
         }),
       });
 
       const data = await response.json();
+      console.log('Verification response:', data);
 
       if (response.ok) {
+        showMessage('Email verified successfully!', 'success');
         onSuccess(data);
       } else {
+        console.error('Verification failed:', data);
         if (data.redirectToRegister) {
-          toast.error(data.message);
+          showMessage(data.message, 'error');
           onClose();
           // Optionally redirect to register page
           window.location.href = '/register';
         } else {
-          toast.error(data.message);
+          showMessage(data.message || 'Invalid verification code', 'error');
         }
       }
     } catch (error) {
-      toast.error('Verification failed. Please try again.');
       console.error('Verification error:', error);
+      showMessage('Verification failed. Please try again.', 'error');
     } finally {
       setLoading(false);
     }
@@ -78,7 +81,7 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
     setResendLoading(true);
 
     try {
-      const response = await fetch('/api/auth/resend-verification-code', {
+      const response = await fetch('http://localhost:5000/api/auth/resend-verification-code', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,23 +90,25 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
       });
 
       const data = await response.json();
+      console.log('Resend response:', data);
 
       if (response.ok) {
-        toast.success(data.message);
+        showMessage(data.message || 'New verification code sent!', 'success');
         setTimeLeft(600); // Reset timer to 10 minutes
         setVerificationCode(''); // Clear current code
       } else {
+        console.error('Resend failed:', data);
         if (data.redirectToRegister) {
-          toast.error(data.message);
+          showMessage(data.message, 'error');
           onClose();
           window.location.href = '/register';
         } else {
-          toast.error(data.message);
+          showMessage(data.message || 'Failed to resend code', 'error');
         }
       }
     } catch (error) {
-      toast.error('Failed to resend verification code. Please try again.');
       console.error('Resend error:', error);
+      showMessage('Failed to resend verification code. Please try again.', 'error');
     } finally {
       setResendLoading(false);
     }

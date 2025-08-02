@@ -10,19 +10,18 @@ const userSchema = new mongoose.Schema({
     required: true, default: 'student'
   },
   isTA: { type:Boolean, default:false },
-  // Email verification fields
-  isEmailVerified: {
-    type: Boolean,
-    default: false
-  },
-  emailVerificationCode: {
-    type: String,
-    default: null
-  },
-  emailVerificationExpires: {
-    type: Date,
-    default: null
-  },
+  // isEmailVerified: {
+  //   type: Boolean,
+  //   default: false
+  // },
+  // emailVerificationCode: {
+  //   type: String,
+  //   default: null
+  // },
+  // emailVerificationExpires: {
+  //   type: Date,
+  //   default: null
+  // },
   resetToken: {
     type: String,
     default: null

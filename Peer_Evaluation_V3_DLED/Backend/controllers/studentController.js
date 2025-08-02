@@ -334,7 +334,7 @@ export const getEvaluationsByBatchAndExam = async (req, res) => {
     const { examId } = req.query;
     const studentId = req.user._id;
 
-    const query = { evaluator: studentId };
+    const query = { evaluator: studentId, eval_status: 'pending' };
     if (examId) query.exam = examId;
 
     const evaluations = await PeerEvaluation.find(query)
@@ -343,7 +343,7 @@ export const getEvaluationsByBatchAndExam = async (req, res) => {
         match: { flags: false }
       })//, 'name date time duration totalMarks batch') // Include batch in exam population
       .populate('document')//, 'uniqueId documentPath uploadedOn');
-
+    
     const batchCourseMap = {};
 
     for (const evaluation of evaluations) {
@@ -389,7 +389,7 @@ export const getEvaluationsByBatchAndExam = async (req, res) => {
 
     res.status(200).json(formattedEvaluations);
   } catch (error) {
-    res.status(500).json({ message: 'Failed to fetch evaluations.' });
+    res.status(500).json({ message: 'Failed to fetch evaluations!' });
   }
 };
 

@@ -332,6 +332,7 @@ export default function AdminDashboard() {
         const data = await response.json();
         showMessage(data.message, 'success');
         fetchCourses();
+        fetchBatches();
         handleEditCourseSelect();
         // setCourses(courses.filter(course => course.id !== courseData.courseId));
       } else {

@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { User } from '../models/User.js';
+import { VerificationCode } from '../models/VerificationCode.js';
 import sendEmail from '../utils/sendEmail.js';
 import { Course } from '../models/Course.js';
 import emailValidator from 'email-validator';
@@ -19,18 +20,15 @@ const generateVerificationCode = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
-// Store temporary user data in memory (you can use Redis for production)
-const tempUserStore = new Map();
-
-// Send verification code - Step 1 of registration
 export const sendVerificationCode = async (req, res) => {
-  const { name, email, password, role } = req.body;
-
-  if (!name || !email || !password || !role) {
-    return res.status(400).json({ message: 'All fields are required!' });
-  }
-
   try {
+    const { name, email, password, role } = req.body;
+
+    // Validate input
+    if (!name || !email || !password || !role) {
+      return res.status(400).json({ message: 'All fields are required' });
+    }
+
     // Validate email format
     const emailIsValid = emailValidator.validate(email);
     if (!emailIsValid) {
@@ -40,32 +38,40 @@ export const sendVerificationCode = async (req, res) => {
     // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User with this email already exists!' });
+      return res.status(400).json({ message: 'User already exists with this email' });
     }
+
+    // Validate role
+    const validRoles = ['student', 'teacher', 'admin'];
+    if (!validRoles.includes(role)) {
+      return res.status(400).json({ message: 'Invalid role specified' });
+    }
+
+    // Hash password
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
 
     // Generate 4-digit verification code
     const verificationCode = generateVerificationCode();
-    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Store user data temporarily (NOT in database)
-    tempUserStore.set(email, {
-      name,
+    // Delete existing verification codes for this email
+    await VerificationCode.deleteMany({ email });
+
+    // Store verification code with registration data (NO USER CREATED YET)
+    await VerificationCode.create({
       email,
-      password,
-      role,
-      verificationCode,
-      verificationExpires,
-      timestamp: Date.now()
+      code: verificationCode,
+      registrationData: {
+        name,
+        email,
+        password: hashedPassword,
+        role,
+      },
+      expiresAt,
     });
 
-    // Clean up expired entries (optional cleanup)
-    for (const [key, value] of tempUserStore.entries()) {
-      if (value.verificationExpires < new Date()) {
-        tempUserStore.delete(key);
-      }
-    }
-
-    // Send verification email
+    // Send verification email with enhanced styling
     const verificationHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -105,71 +111,78 @@ export const sendVerificationCode = async (req, res) => {
 
     await sendEmail(email, 'Email Verification Code - Peer Evaluation System', verificationHtml);
 
-    res.status(200).json({ 
-      message: 'Verification code sent to your email successfully!',
+    console.log(`Verification code sent to ${email}: ${verificationCode}`);
+
+    res.status(200).json({
+      message: 'Verification code sent to your email. Please check your inbox.',
       email: email,
       requiresVerification: true
     });
 
   } catch (error) {
     console.error('Error sending verification code:', error);
-    res.status(500).json({ message: 'Failed to send verification code. Please try again!' });
+    res.status(500).json({
+      message: 'Failed to send verification code',
+      error: error.message
+    });
   }
 };
 
-// Register User - Step 2: Verify code and create user
-export const registerUser = async (req, res) => {
-  const { email, verificationCode } = req.body;
-
-  if (!email || !verificationCode) {
-    return res.status(400).json({ message: 'Email and verification code are required!' });
-  }
-
+// Verify email and CREATE USER (only when verification is successful)
+export const verifyEmail = async (req, res) => {
   try {
-    // Get temporary user data from memory
-    const tempUserData = tempUserStore.get(email);
+    const { email, code } = req.body;
 
-    if (!tempUserData) {
-      return res.status(404).json({ 
-        message: 'Registration session not found! Please start the registration process again.',
-        redirectToRegister: true
-      });
+    // Validate input
+    if (!email || !code) {
+      return res.status(400).json({ message: 'Email and verification code are required' });
     }
 
-    // Check if verification code has expired
-    if (tempUserData.verificationExpires < new Date()) {
-      tempUserStore.delete(email); // Clean up expired data
-      return res.status(400).json({ 
-        message: 'Verification code has expired! Please start the registration process again.',
-        redirectToRegister: true
-      });
-    }
-
-    // Check if verification code matches
-    if (tempUserData.verificationCode !== verificationCode) {
-      return res.status(400).json({ message: 'Invalid verification code!' });
-    }
-
-    // Check if user was created while we were verifying (double-check)
-    const existingUser = await User.findOne({ email });
-    if (existingUser) {
-      tempUserStore.delete(email); // Clean up
-      return res.status(400).json({ message: 'User with this email already exists!' });
-    }
-
-    // Hash the password
-    const hashedPassword = await bcrypt.hash(tempUserData.password, 10);
-
-    // Create the user in database
-    const user = await User.create({
-      name: tempUserData.name,
-      email: tempUserData.email,
-      password: hashedPassword,
-      role: tempUserData.role,
+    // Find verification code with registration data
+    const verificationRecord = await VerificationCode.findOne({ 
+      email, 
+      code 
     });
 
-    // Clean up temporary data
-    tempUserStore.delete(email);
+    if (!verificationRecord) {
+      return res.status(400).json({ message: 'Invalid verification code' });
+    }
+
+    // Check if code has expired
+    if (verificationRecord.expiresAt < new Date()) {
+      // Clean up expired records
+      await VerificationCode.deleteMany({ email });
+      
+      return res.status(400).json({ 
+        message: 'Verification code has expired. Please start registration again.',
+        redirectToRegister: true 
+      });
+    }
+
+    // NOW CREATE THE USER (only after successful verification)
+    const { registrationData } = verificationRecord;
+    
+    // Double-check user doesn't exist (race condition protection)
+    const existingUser = await User.findOne({ email: registrationData.email });
+    if (existingUser) {
+      await VerificationCode.deleteOne({ _id: verificationRecord._id });
+      return res.status(400).json({ message: 'User already exists with this email' });
+    }
+
+    // Create the user
+    const user = await User.create({
+      name: registrationData.name,
+      email: registrationData.email,
+      password: registrationData.password, // Already hashed
+      role: registrationData.role,
+      isVerified: true, // Mark as verified since they completed email verification
+    });
+
+    // Clean up verification code
+    await VerificationCode.deleteOne({ _id: verificationRecord._id });
+
+    // Generate JWT token with user ID and role
+    const token = generateToken(user._id, user.role);
 
     // Send welcome email
     const welcomeHtml = `
@@ -217,50 +230,71 @@ export const registerUser = async (req, res) => {
       // Don't fail the registration if welcome email fails
     }
 
+    console.log(`User ${email} created and verified successfully`);
+
     res.status(201).json({
-      message: 'Registration completed successfully!',
+      message: 'Email verified successfully! Registration completed.',
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id, user.role),
+      token: token,
+      user: {
+        _id: user._id,
+        name: user.name,
+        email: user.email,
+        role: user.role,
+        isVerified: user.isVerified,
+      }
     });
 
   } catch (error) {
-    console.error('Registration error:', error.message);
-    res.status(500).json({ message: 'Server error during registration. Please try again!' });
+    console.error('Error verifying email:', error);
+    res.status(500).json({
+      message: 'Email verification failed',
+      error: error.message
+    });
   }
 };
 
 // Resend verification code
 export const resendVerificationCode = async (req, res) => {
-  const { email } = req.body;
-
-  if (!email) {
-    return res.status(400).json({ message: 'Email is required!' });
-  }
-
   try {
-    // Get temporary user data from memory
-    const tempUserData = tempUserStore.get(email);
+    const { email } = req.body;
 
-    if (!tempUserData) {
-      return res.status(404).json({ 
-        message: 'Registration session not found! Please start the registration process again.',
-        redirectToRegister: true
+    if (!email) {
+      return res.status(400).json({ message: 'Email is required' });
+    }
+
+    // Check if user already exists
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ 
+        message: 'User already exists with this email. Please login instead.',
+        redirectToLogin: true 
+      });
+    }
+
+    // Find existing verification record
+    const existingVerification = await VerificationCode.findOne({ email });
+    if (!existingVerification) {
+      return res.status(400).json({ 
+        message: 'No pending registration found for this email. Please start registration again.',
+        redirectToRegister: true 
       });
     }
 
     // Generate new verification code
     const verificationCode = generateVerificationCode();
-    const verificationExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-    // Update temporary data with new code
-    tempUserData.verificationCode = verificationCode;
-    tempUserData.verificationExpires = verificationExpires;
-    tempUserStore.set(email, tempUserData);
+    // Update the existing verification record
+    existingVerification.code = verificationCode;
+    existingVerification.expiresAt = expiresAt;
+    await existingVerification.save();
 
-    // Send new verification email
+    // Send verification email
+    const { registrationData } = existingVerification;
     const verificationHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -270,7 +304,7 @@ export const resendVerificationCode = async (req, res) => {
           </div>
           
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">Hi ${tempUserData.name},</h2>
+            <h2 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">Hi ${registrationData.name},</h2>
             <p style="color: #555; line-height: 1.6; margin: 0 0 15px 0;">
               Here's your new verification code to complete your registration:
             </p>
@@ -300,71 +334,78 @@ export const resendVerificationCode = async (req, res) => {
 
     await sendEmail(email, 'New Verification Code - Peer Evaluation System', verificationHtml);
 
-    res.status(200).json({ message: 'New verification code sent successfully!' });
+    console.log(`New verification code sent to ${email}: ${verificationCode}`);
+
+    res.status(200).json({
+      message: 'New verification code sent to your email'
+    });
 
   } catch (error) {
     console.error('Error resending verification code:', error);
-    res.status(500).json({ message: 'Failed to resend verification code. Please try again!' });
+    res.status(500).json({
+      message: 'Failed to resend verification code',
+      error: error.message
+    });
   }
 };
 
-// Register User
-// export const registerUser = async (req, res) => {
-//   const { name, email, password, role } = req.body;
+// Direct registration (backup method)
+export const registerUser = async (req, res) => {
+  const { name, email, password, role } = req.body;
 
-//   try {
-//     const userExists = await User.findOne({ email });
-//     if (userExists) {
-//       return res.status(400).json({ message: 'User already exists.' });
-//     }
+  try {
+    const userExists = await User.findOne({ email });
+    if (userExists) {
+      return res.status(400).json({ message: 'User already exists.' });
+    }
 
-//     // Verify email existence
-//     const emailIsValid = emailValidator.validate(email);
+    // Verify email existence
+    const emailIsValid = emailValidator.validate(email);
+    if (!emailIsValid) {
+      return res.status(400).json({ message: 'Email address does not exist or is invalid.' });
+    }
 
-//     if (!emailIsValid) {
-//       return res.status(400).json({ message: 'Email address does not exist or is invalid.' });
-//     }
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-//     const hashedPassword = await bcrypt.hash(password, 10);
+    const user = await User.create({
+      name,
+      email,
+      password: hashedPassword,
+      role,
+      isVerified: true, // Direct registration is auto-verified
+    });
 
-//     const user = await User.create({
-//       name,
-//       email,
-//       password: hashedPassword,
-//       role,
-//     });
+    // Send welcome email
+    const welcomeHtml = `
+      <div style="font-family:Arial,sans-serif; padding:20px;">
+        <h2>Welcome to the Peer Evaluation System</h2>
+        <p>Hi ${user.name},</p>
+        <p>Thank you for registering on the <strong>Peer Evaluation System</strong>.</p>
+        <p>Your account has been successfully created with the following details:</p>
+        <ul>
+          <li><strong>Email:</strong> ${user.email}</li>
+          <li><strong>Role:</strong> ${user.role}</li>
+        </ul>
+        <p>We're excited to have you onboard!</p>
+        <br/>
+        <p>Best regards,<br/>PES Team</p>
+      </div>
+    `;
 
-//     // Send welcome email
-//     const welcomeHtml = `
-//       <div style="font-family:Arial,sans-serif; padding:20px;">
-//         <h2>Welcome to the Peer Evaluation System</h2>
-//         <p>Hi ${user.name},</p>
-//         <p>Thank you for registering on the <strong>Peer Evaluation System</strong>.</p>
-//         <p>Your account has been successfully created with the following details:</p>
-//         <ul>
-//           <li><strong>Email:</strong> ${user.email}</li>
-//           <li><strong>Role:</strong> ${user.role}</li>
-//         </ul>
-//         <p>We're excited to have you onboard!</p>
-//         <br/>
-//         <p>Best regards,<br/>PES Team</p>
-//       </div>
-//     `;
+    await sendEmail(user.email, 'Welcome to Peer Evaluation System', welcomeHtml);
 
-//     await sendEmail(user.email, 'Welcome to Peer Evaluation System', welcomeHtml);
-
-//     res.status(201).json({
-//       _id: user._id,
-//       name: user.name,
-//       email: user.email,
-//       role: user.role,
-//       token: generateToken(user._id, user.role),
-//     });
-//   } catch (error) {
-//     console.error('Registration error:', error.message);
-//     res.status(500).json({ message: error.message });
-//   }
-// };
+    res.status(201).json({
+      _id: user._id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
+      token: generateToken(user._id, user.role),
+    });
+  } catch (error) {
+    console.error('Registration error:', error.message);
+    res.status(500).json({ message: error.message });
+  }
+};
 
 // Login
 export const loginUser = async (req, res) => {

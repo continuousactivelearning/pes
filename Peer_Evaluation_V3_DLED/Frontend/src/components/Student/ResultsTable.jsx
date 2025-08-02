@@ -148,7 +148,7 @@ const ResultsTable = ({
                     fontWeight: 500,
                     color: "gray",
                   }}>
-                    No exams found for this batch.
+                    No active exams found for this batch. Please check Exam history in Exam section for completed exams.
                   </td>
                 </tr>
               ) : (
