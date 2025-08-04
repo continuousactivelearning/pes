@@ -1,4 +1,4 @@
-import express from 'express';
+import express from 'express'; 
 import { registerUser, loginUser, getProfile, forgotPassword, resetPassword, changePassword, sendVerificationCode, resendVerificationCode, verifyEmail } from '../controllers/authController.js';
 import { protect, adminOrTeacherOnly } from '../middleware/authMiddleware.js';
 

@@ -11,30 +11,71 @@ export default function Login() {
     const [loading, setLoading] = useState(false); // Loading state
     const navigate = useNavigate();
 
+    // const handleLogin = async (e) => {
+    //     e.preventDefault();
+    //     setLoading(true);
+
+    //     try {
+    //         const res = await axios.post('http://localhost:5000/api/auth/login', {
+    //             email,
+    //             password,
+    //         });
+
+    //         const { token, role } = res.data;
+
+    //         // Save token and role in localStorage
+    //         localStorage.setItem('token', token);
+    //         localStorage.setItem('role', role);
+
+    //         // Navigate according to role
+    //         if (role === 'admin') navigate('/admin');
+    //         else if (role === 'teacher') navigate('/teacher');
+    //         else if (role === 'ta') navigate('/ta');
+    //         else navigate('/student');
+    //     } catch (err) {
+    //         showMessage('Login failed. Please check your credentials.', 'error');
+    //         console.error(err);
+    //     } finally {
+    //         setLoading(false);
+    //     }
+    // };
+
     const handleLogin = async (e) => {
         e.preventDefault();
         setLoading(true);
 
         try {
-            const res = await axios.post('http://localhost:5000/api/auth/login', {
-                email,
-                password,
+            const response = await fetch('http://localhost:5000/api/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password }),
             });
 
-            const { token, role } = res.data;
+            const data = await response.json();
 
-            // Save token and role in localStorage
-            localStorage.setItem('token', token);
-            localStorage.setItem('role', role);
+            if (response.ok) {
+            // Successful login
+            localStorage.setItem('userInfo', JSON.stringify(data));
+            localStorage.setItem('token', data.token);
+            localStorage.setItem('role', data.role);
 
-            // Navigate according to role
-            if (role === 'admin') navigate('/admin');
-            else if (role === 'teacher') navigate('/teacher');
-            else if (role === 'ta') navigate('/ta');
+            if (data.role === 'admin') navigate('/admin');
+            else if (data.role === 'teacher') navigate('/teacher');
             else navigate('/student');
-        } catch (err) {
+            showMessage('Login successful!', 'success');
+            } else {
+            if (data.requiresVerification) {
+                // User needs email verification
+                showMessage(data.message, 'info');
+                setEmailForVerification(data.email || email);
+                setShowVerificationModal(true);
+            } else {
+                showMessage(data.message || 'Login failed', 'error');
+            }
+            }
+        } catch (error) {
+            console.error('Login error:', error);
             showMessage('Login failed. Please check your credentials.', 'error');
-            console.error(err);
         } finally {
             setLoading(false);
         }

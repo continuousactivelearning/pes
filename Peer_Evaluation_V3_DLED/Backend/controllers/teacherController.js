@@ -236,6 +236,7 @@ export const studentsEnroll = async (req, res) => {
               email: student.email,
               password: hashedPassword,
               role: 'student',
+              isVerified: true,
             });
 
             // await user.save();

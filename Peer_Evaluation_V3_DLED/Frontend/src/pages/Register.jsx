@@ -69,13 +69,11 @@ export default function Register() {
     
     // Redirect based on role
     if (userData.role === 'admin') {
-      navigate('/admin/dashboard');
+      navigate('/admin');
     } else if (userData.role === 'teacher') {
-      navigate('/teacher/dashboard');
-    } else if (userData.role === 'ta') {
-      navigate('/ta/dashboard');
+      navigate('/teacher');
     } else {
-      navigate('/student/dashboard');
+      navigate('/student');
     }
   };
 

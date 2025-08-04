@@ -3,11 +3,11 @@ import jwt from 'jsonwebtoken';
 import nodemailer from 'nodemailer';
 import crypto from 'crypto';
 import { User } from '../models/User.js';
-import { VerificationCode } from '../models/VerificationCode.js';
 import sendEmail from '../utils/sendEmail.js';
 import { Course } from '../models/Course.js';
 import emailValidator from 'email-validator';
 import { Batch } from '../models/Batch.js';
+import { VerificationCode } from '../models/VerificationCode.js';
 
 // Generate JWT token
 const generateToken = (id, role) => {
@@ -20,11 +20,11 @@ const generateVerificationCode = () => {
   return Math.floor(1000 + Math.random() * 9000).toString();
 };
 
+// Store temporary user data in memory (you can use Redis for production)
 export const sendVerificationCode = async (req, res) => {
   try {
     const { name, email, password, role } = req.body;
 
-    // Validate input
     if (!name || !email || !password || !role) {
       return res.status(400).json({ message: 'All fields are required' });
     }
@@ -413,11 +413,72 @@ export const loginUser = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(400).json({ message: 'User not found.' });
+    
+    // If no user found, check if there's a pending registration
+    if (!user) {
+      const pendingRegistration = await VerificationCode.findOne({ email });
+      if (pendingRegistration) {
+        return res.status(400).json({ 
+          message: 'Please complete your registration by verifying your email.',
+          requiresVerification: true,
+          email: email
+        });
+      }
+      return res.status(400).json({ message: 'User not found.' });
+    }
+    console.log('User found:', user.email);
 
+    // Check if user exists but is not verified
+    if (!user.isVerified) {
+      // Send new verification code for existing unverified user
+      const verificationCode = generateVerificationCode();
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+
+      // Delete existing verification codes
+      await VerificationCode.deleteMany({ email });
+
+      // Create new verification code with existing user data
+      await VerificationCode.create({
+        email,
+        code: verificationCode,
+        registrationData: {
+          name: user.name,
+          email: user.email,
+          password: user.password, // Already hashed
+          role: user.role,
+        },
+        expiresAt,
+      });
+
+      // Send verification email
+      const verificationHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2>Email Verification Required</h2>
+          <p>Hi ${user.name},</p>
+          <p>Your account needs email verification. Use this code:</p>
+          <div style="text-align: center; font-size: 24px; font-weight: bold; padding: 20px; background: #f0f0f0; margin: 20px 0;">
+            ${verificationCode}
+          </div>
+          <p>This code expires in 10 minutes.</p>
+        </div>
+      `;
+
+      await sendEmail(email, 'Email Verification Required', verificationHtml);
+
+      return res.status(400).json({ 
+        message: 'Please verify your email. We\'ve sent a verification code to your email.',
+        requiresVerification: true,
+        email: email
+      });
+    }
+    console.log('User is verified:', user.email);
+
+    // Verify password for verified users
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials!' });
+    console.log('Password matched for user:', user.email);
 
+    // Successful login
     res.status(200).json({
       _id: user._id,
       name: user.name,
@@ -430,7 +491,30 @@ export const loginUser = async (req, res) => {
   }
 };
 
+// export const loginUser = async (req, res) => {
+//   const { email, password } = req.body;
+
+//   try {
+//     const user = await User.findOne({ email });
+//     if (!user) return res.status(400).json({ message: 'User not found.' });
+
+//     const isMatch = await bcrypt.compare(password, user.password);
+//     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials!' });
+
+//     res.status(200).json({
+//       _id: user._id,
+//       name: user.name,
+//       email: user.email,
+//       role: user.role,
+//       token: generateToken(user._id, user.role)
+//     });
+//   } catch (error) {
+//     res.status(500).json({ message: error.message });
+//   }
+// };
+
 // Protected Profile
+
 export const getProfile = async (req, res) => {
   if (!req.user) return res.status(404).json({ message: 'User not found' });
 
