@@ -1,12 +1,16 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from "react-router-dom";
+import { FaTimes, FaEnvelope, FaClock, FaCheck, FaRedo } from 'react-icons/fa';
 import { showMessage } from '../../utils/Message';
 import '../../styles/User/VerificationModal.css';
 
-const VerificationModal = ({ email, onSuccess, onClose }) => {
+const VerificationModal = ({ email, handleVerificationSuccess, handleVerificationClose }) => {
   const [verificationCode, setVerificationCode] = useState(['', '', '', '']);
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const [timeLeft, setTimeLeft] = useState(600); // 10 minutes in seconds
+  const [timeLeft, setTimeLeft] = useState(600);
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -14,7 +18,7 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
         if (prevTime <= 1) {
           clearInterval(timer);
           showMessage('Verification code expired. Please start registration again.', 'error');
-          onClose();
+          handleVerificationClose();
           return 0;
         }
         return prevTime - 1;
@@ -22,7 +26,7 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [onClose]);
+  }, [handleVerificationClose]);
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -30,7 +34,7 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
-  const handleSubmit = async (e) => {
+  const handleVerification = async (e) => {
     e.preventDefault();
     
     const codeString = verificationCode.join('');
@@ -54,16 +58,16 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
       });
 
       const data = await response.json();
-      console.log('Verification response:', data);
+      // console.log('Verification response:', data);
 
       if (response.ok) {
         showMessage('Email verified successfully!', 'success');
-        onSuccess(data);
+        handleVerificationSuccess(data);
       } else {
         console.error('Verification failed:', data);
         if (data.redirectToRegister) {
           showMessage(data.message, 'error');
-          onClose();
+          handleVerificationClose();
           window.location.href = '/login';
         } else {
           showMessage(data.message || 'Invalid verification code', 'error');
@@ -90,7 +94,7 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
       });
 
       const data = await response.json();
-      console.log('Resend response:', data);
+      // console.log('Resend response:', data);
 
       if (response.ok) {
         showMessage(data.message || 'New verification code sent!', 'success');
@@ -100,7 +104,7 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
         console.error('Resend failed:', data);
         if (data.redirectToRegister) {
           showMessage(data.message, 'error');
-          onClose();
+          handleVerificationClose();
           window.location.href = '/register';
         } else {
           showMessage(data.message || 'Failed to resend code', 'error');
@@ -162,26 +166,15 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
         <div className="verification-modal-header">
           <div className="header-content">
             <div className="icon-wrapper">
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none">
-                <path
-                  d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"
-                  fill="currentColor"
-                />
-              </svg>
+              <FaEnvelope />
             </div>
             <div className="header-text">
               <h2>Email Verification</h2>
               <p>Complete your registration</p>
             </div>
           </div>
-          <button className="close-btn" onClick={onClose} aria-label="Close">
-            <svg width="50" height="50" viewBox="0 0 20 20" fill="currentColor">
-              <path
-                fillRule="evenodd"
-                d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
-                clipRule="evenodd"
-              />
-            </svg>
+          <button className="close-btn" onClick={handleVerificationClose} aria-label="Close">
+            <FaTimes />
           </button>
         </div>
 
@@ -191,18 +184,13 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
               <h3>Check your email</h3>
               <p>We've sent a 4-digit verification code to:</p>
               <div className="email-display">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <path
-                    d="M20 4H4C2.9 4 2 4.9 2 6V18C2 19.1 2.9 20 4 20H20C21.1 20 22 19.1 22 18V6C22 4.9 21.1 4 20 4ZM20 8L12 13L4 8V6L12 11L20 6V8Z"
-                    fill="currentColor"
-                  />
-                </svg>
+                <FaEnvelope />
                 <strong>{email}</strong>
               </div>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="verification-form">
+          <form onSubmit={handleVerification} className="verification-form">
             <div className="code-input-section">
               <label className="code-label">Enter Verification Code</label>
               <div className="code-inputs-container">
@@ -226,10 +214,7 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
 
             <div className="timer-section">
               <div className="timer-info">
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                  <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2"/>
-                  <polyline points="12,6 12,12 16,14" stroke="currentColor" strokeWidth="2"/>
-                </svg>
+                <FaClock />
                 <span>Code expires in: <strong className="timer">{formatTime(timeLeft)}</strong></span>
               </div>
             </div>
@@ -246,16 +231,8 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
                 </div>
               ) : (
                 <div className="button-content">
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-                    <path
-                      d="M20 6L9 17L4 12"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span>Verify & Complete Registration</span>
+                  <FaCheck />
+                  <span>Verify Registration</span>
                 </div>
               )}
             </button>
@@ -277,22 +254,7 @@ const VerificationModal = ({ email, onSuccess, onClose }) => {
                   </div>
                 ) : (
                   <div className="button-content">
-                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
-                      <path
-                        d="M1 4V10H7M23 20V14H17"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M20.49 9A9 9 0 0 0 5.64 5.64L1 10M23 14L18.36 18.36A9 9 0 0 1 3.51 15"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <FaRedo />
                     <span>Resend Code</span>
                   </div>
                 )}
