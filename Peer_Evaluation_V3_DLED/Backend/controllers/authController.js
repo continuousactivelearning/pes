@@ -165,7 +165,6 @@ export const sendVerificationCode = async (req, res) => {
   }
 };
 
-// Verify email and CREATE USER (only when verification is successful)
 export const verifyEmail = async (req, res) => {
   try {
     const { email, code } = req.body;
@@ -294,7 +293,6 @@ export const verifyEmail = async (req, res) => {
   }
 };
 
-// Resend verification code
 export const resendVerificationCode = async (req, res) => {
   try {
     const { email } = req.body;
@@ -386,7 +384,6 @@ export const resendVerificationCode = async (req, res) => {
   }
 };
 
-// Direct registration (backup method)
 export const registerUser = async (req, res) => {
   const { name, email, password, role } = req.body;
 
@@ -396,7 +393,6 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: 'User already exists.' });
     }
 
-    // Verify email existence
     const emailIsValid = emailValidator.validate(email);
     if (!emailIsValid) {
       return res.status(400).json({ message: 'Email address does not exist or is invalid.' });
@@ -409,10 +405,9 @@ export const registerUser = async (req, res) => {
       email,
       password: hashedPassword,
       role,
-      isVerified: true, // Direct registration is auto-verified
+      isVerified: true,
     });
 
-    // Send welcome email
     const welcomeHtml = `
       <div style="font-family:Arial,sans-serif; padding:20px;">
         <h2>Welcome to the Peer Evaluation System</h2>
@@ -444,14 +439,12 @@ export const registerUser = async (req, res) => {
   }
 };
 
-// Login
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
 
   try {
     const user = await User.findOne({ email });
     
-    // If no user found, check if there's a pending registration
     if (!user) {
       const pendingRegistration = await VerificationCode.findOne({ email });
       if (pendingRegistration) {
@@ -463,31 +456,25 @@ export const loginUser = async (req, res) => {
       }
       return res.status(400).json({ message: 'User not found.' });
     }
-    console.log('User found:', user.email);
 
-    // Check if user exists but is not verified
     if (!user.isVerified) {
-      // Send new verification code for existing unverified user
       const verificationCode = generateVerificationCode();
-      const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+      const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-      // Delete existing verification codes
       await VerificationCode.deleteMany({ email });
 
-      // Create new verification code with existing user data
       await VerificationCode.create({
         email,
         code: verificationCode,
         registrationData: {
           name: user.name,
           email: user.email,
-          password: user.password, // Already hashed
+          password: user.password,
           role: user.role,
         },
         expiresAt,
       });
 
-      // Send verification email
       const verificationHtml = `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
           <h2>Email Verification Required</h2>
@@ -508,14 +495,10 @@ export const loginUser = async (req, res) => {
         email: email
       });
     }
-    console.log('User is verified:', user.email);
 
-    // Verify password for verified users
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials!' });
-    console.log('Password matched for user:', user.email);
 
-    // Successful login
     res.status(200).json({
       _id: user._id,
       name: user.name,
@@ -564,7 +547,6 @@ export const getProfile = async (req, res) => {
   });
 };
 
-// Forgot Password
 export const forgotPassword = async (req, res) => {
   const { email } = req.body;
 
@@ -615,7 +597,6 @@ export const forgotPassword = async (req, res) => {
   }
 };
 
-// Reset Password
 export const resetPassword = async (req, res) => {
   const { token } = req.params;
   const { password } = req.body;
@@ -644,7 +625,6 @@ export const resetPassword = async (req, res) => {
   }
 };
 
-// Change Password
 export const changePassword = async (req, res) => {
   const { currentPassword, newPassword } = req.body;
 
