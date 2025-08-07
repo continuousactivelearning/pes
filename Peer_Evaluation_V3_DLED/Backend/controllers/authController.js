@@ -148,7 +148,7 @@ export const sendVerificationCode = async (req, res) => {
 
     await sendEmail(email, 'Email Verification Code - Peer Evaluation System', verificationHtml);
 
-    console.log(`Verification code sent to ${email}: ${verificationCode}`);
+    // console.log(`Verification code sent to ${email}: ${verificationCode}`);
 
     res.status(200).json({
       message: 'Verification code sent to your email. Please check your inbox.',
@@ -263,10 +263,9 @@ export const verifyEmail = async (req, res) => {
       await sendEmail(user.email, 'Welcome to Peer Evaluation System! 🎉', welcomeHtml);
     } catch (emailError) {
       console.log('Welcome email failed to send:', emailError.message);
-      // Don't fail the registration if welcome email fails
     }
 
-    console.log(`User ${email} created and verified successfully`);
+    // console.log(`User ${email} created and verified successfully`);
 
     res.status(201).json({
       message: 'Email verified successfully! Registration completed.',
@@ -563,15 +562,88 @@ export const forgotPassword = async (req, res) => {
     const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5000';
     const resetLink = `${CLIENT_URL}/reset-password/${token}`;
     const html = `
-      <div style="font-family:Arial,sans-serif; padding:20px;">
-        <h2>Password Reset Request</h2>
-        <p>Hi ${user.name || ''},</p>
-        <p>Click the button below to reset your password. This link will expire in 1 hour.</p>
-        <a href="${resetLink}" style="background:#667eea;color:white;padding:10px 20px;text-decoration:none;border-radius:5px;">Reset Password</a>
-        <p>If you did not request a password reset, please ignore this email.</p>
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+        <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+          
+          <!-- Header -->
+          <div style="text-align: center; margin-bottom: 30px;">
+            <h1 style="color: #4b3c70; margin: 0; font-size: 28px;">🔐 Password Reset</h1>
+            <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">Peer Evaluation System</p>
+          </div>
+          
+          <!-- Main Content -->
+          <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+            <h2 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">Hi ${user.name || 'User'},</h2>
+            <p style="color: #555; line-height: 1.6; margin: 0 0 15px 0;">
+              We received a request to reset your password for your Peer Evaluation System account. 
+              Click the button below to create a new password.
+            </p>
+          </div>
+
+          <!-- Reset Button -->
+          <div style="text-align: center; margin: 30px 0;">
+            <a href="${resetLink}" style="
+              display: inline-block;
+              background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+              color: white;
+              padding: 15px 30px;
+              text-decoration: none;
+              border-radius: 8px;
+              font-size: 16px;
+              font-weight: 600;
+              box-shadow: 0 2px 8px rgba(102, 126, 234, 0.3);
+              transition: all 0.2s;
+            ">
+              Reset My Password
+            </a>
+          </div>
+
+          <!-- Expiry Warning -->
+          <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #856404; margin: 0; font-size: 14px;">
+              <strong>⏰ Important:</strong> This reset link will expire in <strong>1 hour</strong> for security reasons.
+            </p>
+          </div>
+
+          <!-- Alternative Link -->
+          <div style="background-color: #e9ecef; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #6c757d; margin: 0 0 10px 0; font-size: 14px;">
+              <strong>Can't click the button?</strong> Copy and paste this link into your browser:
+            </p>
+            <p style="color: #667eea; word-break: break-all; margin: 0; font-size: 12px;">
+              ${resetLink}
+            </p>
+          </div>
+
+          <!-- Security Notice -->
+          <div style="background-color: #d1ecf1; border: 1px solid #bee5eb; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="color: #0c5460; margin: 0; font-size: 14px;">
+              <strong>🛡️ Security Notice:</strong> If you didn't request this password reset, please ignore this email. 
+              Your account remains secure and no changes will be made.
+            </p>
+          </div>
+
+          <!-- Footer -->
+          <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+            <p style="color: #888; font-size: 14px; margin: 0 0 10px 0;">
+              Need help? Contact our support team
+            </p>
+            <p style="color: #888; font-size: 14px; margin: 0;">
+              Best regards,<br/>
+              <strong>PES Team</strong>
+            </p>
+          </div>
+          
+        </div>
+        
+        <!-- Footer Disclaimer -->
+        <div style="text-align: center; margin-top: 20px;">
+          <p style="color: #999; font-size: 12px; margin: 0;">
+            This email was sent from an automated system. Please do not reply to this email.
+          </p>
+        </div>
       </div>
     `;
-
     const transporter = nodemailer.createTransport({
       service: 'Gmail',
       auth: {
@@ -608,20 +680,19 @@ export const resetPassword = async (req, res) => {
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired token' });
+      return res.status(400).json({ message: 'Invalid or expired token!' });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
     user.password = hashedPassword;
-    user.resetToken = undefined;
-    user.tokenExpiry = undefined;
+    user.resetToken = null;
+    user.tokenExpiry = null;
 
     await user.save();
 
-    res.status(200).json({ message: 'Password has been reset successfully' });
+    res.status(200).json({ message: 'Password has been reset successfully!' });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: 'Server error!' });
   }
 };
 
@@ -638,9 +709,8 @@ export const changePassword = async (req, res) => {
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
-    res.status(200).json({ message: 'Password changed successfully' });
+    res.status(200).json({ message: 'Password changed successfullyPassword changed successfully! Logging out...' });
   } catch (error) {
-    console.error('Change password error:', error.message);
     res.status(500).json({ message: 'Server error' });
   }
 };

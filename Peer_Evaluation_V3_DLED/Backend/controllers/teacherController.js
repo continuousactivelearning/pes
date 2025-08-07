@@ -243,23 +243,65 @@ export const studentsEnroll = async (req, res) => {
 
             // Send welcome email
             const htmlcontent = `
-            <div style="font-family:Arial,sans-serif; padding:20px;">
-              <h2>Welcome to the Peer Evaluation System</h2>
-              <p>Hello ${student.name},</p>
-              <p>Your account has been successfully created with the following details:</p>
-              <ul>
-                <li><strong>Email:</strong> ${student.email}</li>
-                <li><strong>Password:</strong> ${randomPassword}</li>
-              </ul>
-              <p>We're excited to have you onboard!</p>
-              <p>Please log in and change your password.</p>
-              <br/>
-              <p>Best regards,<br/>PES Team</p>
-            </div>
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
+                <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+                  
+                  <!-- Header -->
+                  <div style="text-align: center; margin-bottom: 30px;">
+                    <h1 style="color: #4b3c70; margin: 0; font-size: 28px;">🎉 Welcome to PES!</h1>
+                    <p style="color: #666; margin: 10px 0 0 0; font-size: 16px;">Peer Evaluation System</p>
+                  </div>
+                  
+                  <!-- Success Message -->
+                  <div style="background-color: #d4edda; border: 1px solid #c3e6cb; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h2 style="color: #155724; margin: 0 0 15px 0; font-size: 20px;">Account Created Successfully! ✅</h2>
+                    <p style="color: #155724; margin: 0;">Hello ${student.name}, your account has been successfully created and you've been enrolled in the system.</p>
+                  </div>
+
+                  <!-- Account Details -->
+                  <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
+                    <h3 style="color: #333; margin: 0 0 15px 0;">Your Login Details:</h3>
+                    <ul style="color: #555; line-height: 1.8; margin: 0; padding-left: 20px;">
+                      <li><strong>Email:</strong> ${student.email}</li>
+                      <li><strong>Password:</strong> <span style="font-family: monospace; background: #e9ecef; padding: 2px 6px; border-radius: 4px;">${randomPassword}</span></li>
+                    </ul>
+                  </div>
+
+                  <!-- Important Security Notice -->
+                  <div style="background-color: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 8px; margin: 20px 0;">
+                    <p style="color: #856404; margin: 0; font-size: 14px;">
+                      <strong>🔒 Security Notice:</strong> Please log in and change your password immediately for security reasons.
+                    </p>
+                  </div>
+
+                  <!-- Welcome Message -->
+                  <div style="text-align: center; margin: 30px 0;">
+                    <p style="color: #555; line-height: 1.6; margin: 0;">
+                      We're excited to have you onboard! You can now log in to the Peer Evaluation System and start exploring the features available to you.
+                    </p>
+                  </div>
+
+                  <!-- Footer -->
+                  <div style="text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #eee;">
+                    <p style="color: #888; font-size: 14px; margin: 0;">
+                      Welcome aboard!<br/>
+                      <strong>PES Team</strong>
+                    </p>
+                  </div>
+                  
+                </div>
+                
+                <!-- Footer Disclaimer -->
+                <div style="text-align: center; margin-top: 20px;">
+                  <p style="color: #999; font-size: 12px; margin: 0;">
+                    This email was sent from an automated system. Please do not reply to this email.
+                  </p>
+                </div>
+              </div>
             `;
             await sendEmail(
               student.email,
-              'Welcome to Peer Evaluation System',
+              'Welcome to Peer Evaluation System! 🎉',
               htmlcontent
             );
             await user.save();

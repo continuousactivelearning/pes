@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { FaHome, FaArrowLeft, FaUser } from 'react-icons/fa';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
@@ -58,9 +59,7 @@ export default function ForgotPassword() {
                 justifyContent: 'center',
                 textDecoration: 'none'
             }} aria-label="Go to homepage">
-                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-                    <path d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-5h-6v5H4a1 1 0 0 1-1-1V10.5z" stroke="#667eea" strokeWidth="2" strokeLinejoin="round" fill="none"/>
-                </svg>
+                <FaHome size={22} color="#667eea" />
             </Link>
 
             {/* Updated Back Button (top-left-right-to-home, black theme) */}
@@ -95,9 +94,7 @@ export default function ForgotPassword() {
                 }}
                 aria-label="Go back"
             >
-                <svg width="22" height="22" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M15 18l-6-6 6-6" />
-                </svg>
+                <FaArrowLeft size={22} color="#ffffff" />
             </button>
 
 
@@ -124,9 +121,7 @@ export default function ForgotPassword() {
                     justifyContent: 'center',
                     boxShadow: '0 2px 12px rgba(102,126,234,0.18)'
                 }}>
-                    <svg width="36" height="36" fill="none" viewBox="0 0 24 24">
-                        <path fill="#fff" d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5Z"/>
-                    </svg>
+                    <FaUser size={36} color="#fff" />
                 </div>
                 <h1 style={{
                     textAlign: 'center',

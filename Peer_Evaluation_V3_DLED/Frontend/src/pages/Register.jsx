@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FaEye, FaEyeSlash, FaCheck, FaTimes } from "react-icons/fa";
+import { FaEye, FaEyeSlash, FaCheck, FaTimes, FaHome, FaUser } from "react-icons/fa";
 import { showMessage } from "../utils/Message";
 import VerificationModal from "../components/User/VerificationModal";
 import "../styles/User/Register.css";
@@ -152,15 +152,7 @@ export default function Register() {
     <div className="register-container">
       {/* Home icon to route back to homepage */}
       <Link to="/" className="home-icon" aria-label="Go to homepage">
-        <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M3 10.5L12 4l9 6.5V20a1 1 0 0 1-1 1h-5v-5h-6v5H4a1 1 0 0 1-1-1V10.5z"
-            stroke="#667eea"
-            strokeWidth="2"
-            strokeLinejoin="round"
-            fill="none"
-          />
-        </svg>
+        <FaHome size={22} color="#667eea" />
       </Link>
 
       <div
@@ -183,12 +175,7 @@ export default function Register() {
         }}
       >
         <div className="avatar-icon">
-          <svg width="36" height="36" fill="none" viewBox="0 0 24 24">
-            <path
-              fill="#fff"
-              d="M12 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10Zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5Z"
-            />
-          </svg>
+          <FaUser size={36} color="#fff" />
         </div>
 
         <h1 className="register-title">Create Account</h1>
@@ -198,8 +185,8 @@ export default function Register() {
 
         <form onSubmit={handleRegister} className="register-form">
           {/* Name Field */}
-          <div className="form-group">
-            <label htmlFor="name" className="form-group label">
+          <div className="form-group" >
+            <label htmlFor="name">
               Name
             </label>
             <input
@@ -216,7 +203,7 @@ export default function Register() {
 
           {/* Email Field */}
           <div className="form-group">
-            <label htmlFor="email" className="form-group label">
+            <label htmlFor="email" >
               Email
             </label>
             <input
@@ -232,7 +219,7 @@ export default function Register() {
           </div>
 
           <div className="form-group password-group">
-            <label htmlFor="password" className="form-group label">
+            <label htmlFor="password">
               Password
             </label>
             <div className="password-container">
@@ -293,7 +280,7 @@ export default function Register() {
 
           {/* Role Field */}
           <div className="form-group">
-            <label htmlFor="role" className="form-group label">
+            <label htmlFor="role" >
               Role
             </label>
             <select

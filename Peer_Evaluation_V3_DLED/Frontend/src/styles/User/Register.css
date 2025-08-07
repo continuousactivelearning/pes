@@ -103,13 +103,16 @@ html, body {
   gap: 1.2rem;
   width: 100%;
   margin-top: 1rem;
+  color: #3f3d56;
 }
 
 /* Form groups */
 .form-group {
   display: flex;
+  flex-direction: row !important;
   align-items: center;
-  gap: 1rem;
+  /* width: 100%; */
+  /* gap: 1rem; */
 }
 
 .form-group.password-group {
@@ -117,12 +120,13 @@ html, body {
 }
 
 .form-group label {
+  flex: 0;
   color: #3f3d56;
   font-weight: 500;
   font-size: 1rem;
   min-width: 90px;
   text-align: left;
-  width: 90px;
+  /* width: 30%; */
   display: block;
 }
 
