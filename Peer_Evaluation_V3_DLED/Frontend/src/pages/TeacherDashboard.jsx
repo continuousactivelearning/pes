@@ -982,7 +982,7 @@ export default function TeacherDashboard() {
             <div style={{ display: 'flex', flexDirection: 'column', color: '#2d3559' }}>
               <h2 style={{ ...sectionHeading, marginTop: 0, marginBottom: '2rem', textAlign: 'center', color: '#3f3d56' }}>TA Manager</h2>
               <p style={{ textAlign: 'left', color: '#3f3d56' }}>Assign or deassign a TA to/from a batch by selecting the batch and action.</p>
-              <form onSubmit={handleTAAssignment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '100%' }}>
+              <form onSubmit={handleTAAssignment} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', width: '50%', maxWidth: '900px', border: '2px solid #5c5470', borderRadius: '12px', padding: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                 {/* Email Input */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', width: '100%' }}>
                   <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px', textAlign: 'left' }} htmlFor="email">Email ID</label>
@@ -1084,7 +1084,7 @@ export default function TeacherDashboard() {
                 Courses and Batches
               </h2>
 
-              <table style={{ width: '100%', borderCollapse: 'collapse', borderRadius: '12px', overflow: 'hidden' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', overflow: 'hidden', border: '2px solid #5c5470', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                 <thead style={{ backgroundColor: '#4b3c70', color: '#ffffff' }}>
                   <tr>
                     <th style={{ padding: '12px', textAlign: 'center' }}>Course Name</th>
@@ -1187,7 +1187,7 @@ export default function TeacherDashboard() {
               </div>
 
               {/* Inline Row for Course, Batch Dropdowns, and Schedule Exam Button */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', width: '100%' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem', width: '97%', border: '2px solid #5c5470', borderRadius: '12px', padding: '1rem', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
                 {/* Course Dropdown */}
                 <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flex: '1 1 auto' }}>
                   <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap' }} htmlFor="courseDropdown">Course</label>
