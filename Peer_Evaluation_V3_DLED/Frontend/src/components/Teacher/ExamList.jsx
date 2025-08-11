@@ -3,7 +3,7 @@ import { FaEdit, FaDownload, FaUpload, FaPaperPlane, FaTrashAlt, FaCheck, FaEye,
 
 const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadClick, handleSendEvaluation, handleFlagEvaluations, handleMarkAsDone, handleDeleteExam, handleViewEvaluations, handleViewResults }) => {
   return (
-    <div style={{ marginTop: '2rem', maxHeight: '350px', border: '2px solid #5c5470', borderRadius: '12px', boxShadow: '0 4px 12px rgba(0,0,0,0.5)' }}>
+    <div style={{ marginTop: '2rem', maxHeight: '350px', border: '2px solid #5c5470', borderRadius: '12px', boxShadow: "0 4px 12px #4b3c70" }}>
       <h3 style={{ color: '#3f3d56', fontWeight: 'bold', marginBottom: '1rem' }}>Exams</h3>
       <div style={{ maxHeight: '300px', overflowY: 'auto', overflowX: 'auto', scrollbarWidth: 'thin', scrollbarColor: ' #4b3c70 transparent' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', borderRadius: '12px' }}>

@@ -85,7 +85,7 @@ const ResultsTable = ({
           maxHeight: "60vh", // Limit height to prevent too much vertical scrolling
           border: "1px solid #e0e0e0",
           borderRadius: "8px",
-          boxShadow: "0 2px 8px rgba(75, 60, 112, 0.1)",
+          boxShadow: "0 4px 12px #4b3c70",
           // Custom scrollbar styles
           scrollbarWidth: "thin",
           scrollbarColor: "#4b3c70 #f0f0f0",

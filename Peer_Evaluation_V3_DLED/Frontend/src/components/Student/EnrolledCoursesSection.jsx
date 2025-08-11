@@ -8,9 +8,9 @@ export default function EnrolledCoursesSection({ enrolledCourses }) {
         minWidth: 190,
         maxWidth: 500,
         borderRadius: "18px",
-        boxShadow: "0 4px 16px rgba(60,60,120,0.10)",
         padding: "2rem 2.5rem",
         border: "1.5px solid #4b3c70",
+        boxShadow: "0 4px 12px #4b3c70",
       }}
     >
       <h3

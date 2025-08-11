@@ -60,7 +60,7 @@ export default function ManageOverlay({
                 overflowX: "auto",
               }}
             >
-              <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #ddd" }}>
+              <table style={{ width: "100%", borderCollapse: "collapse", border: "1px solid #5c5470", boxShadow: "0 4px 12px #4b3c70" }}>
                 <thead style={{ backgroundColor: "#4b3c70", color: "#fff" }}>
                   <tr>
                     <th style={{ padding: "8px" }}>Name</th>
@@ -140,7 +140,7 @@ export default function ManageOverlay({
                   {examGroup.exam.name} — {new Date(examGroup.exam.date).toLocaleDateString()}
                 </p>
                 <div style={{ overflowX: "auto" }}>
-                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", border: "1px solid #ddd" }}>
+                  <table style={{ width: "100%", borderCollapse: "collapse", fontSize: "0.85rem", border: "1px solid #5c5470", boxShadow: "0 4px 12px #4b3c70" }}>
                     <thead style={{ backgroundColor: "#4b3c70", color: "#fff" }}>
                       <tr>
                         <th style={cellHeader}>Evaluator</th>

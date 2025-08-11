@@ -69,7 +69,7 @@ const EvaluationsTable = ({
           borderCollapse: "collapse",
           background: "#fff",
           borderRadius: 8,
-          boxShadow: "0 2px 8px #4b3c70",
+          boxShadow: "0 4px 12px #4b3c70",
         }}
       >
         <thead
