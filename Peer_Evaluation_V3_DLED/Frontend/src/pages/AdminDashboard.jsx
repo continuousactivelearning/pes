@@ -1,12 +1,12 @@
 // import { useState, useEffect } from 'react';
 // import { useNavigate } from 'react-router-dom';
 // import { FaChalkboardTeacher, FaBook, FaUserGraduate } from 'react-icons/fa';
-// import '../styles/Admin/AdminDashboard.css';
+// import '../styles/Admin/AdminDashboard.css'; // Assuming you have a CSS file for styles
 // import { containerStyle, sidebarStyle, mainStyle, contentStyle, sectionHeading, buttonStyle } from '../styles/Admin/AdminDashboardStyles'; // Import styles
-// import { showMessage } from '../utils/Message';
+// import { showMessage } from '../utils/Message'; // Assuming you have a utility for showing messages
 // import { AppContext } from '../utils/AppContext';
 // import { useContext } from 'react';
-// import ProfileMenu from '../components/User/ProfileMenu';
+// import ProfileMenu from '../components/User/ProfileMenu'; // Assuming you have a ProfileMenu component
 
 // export default function AdminDashboard() {
 //   const [activeTab, setActiveTab] = useState('home');
@@ -1404,8 +1404,6 @@
 // }
 
 
-
-
 import { useState, useEffect, useContext } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaChalkboardTeacher, FaBook, FaUserGraduate } from 'react-icons/fa';
@@ -1420,21 +1418,21 @@ export default function AdminDashboard() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const [instructors, setInstructors] = useState([]);
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] = useState([]); // New state for courses
   const [courseDetails, setCourseDetails] = useState({
-    courseId: '',
-    courseName: '',
-    openCourse: false,
-    startDate: '',
-    endDate: ''
+      courseId: '',
+      courseName: '',
+      openCourse: false,
+      startDate: '',
+      endDate: ''
   });
   const [editCourseId, setEditCourseId] = useState('');
   const [editCourseDetails, setEditCourseDetails] = useState({
-    courseId: '',
-    courseName: '',
-    openCourse: false,
-    startDate: '',
-    endDate: ''
+      courseId: '',
+      courseName: '',
+      openCourse: false,
+      startDate: '',
+      endDate: ''
   });
   const [batchDetails, setBatchDetails] = useState({
     batchId: '',
@@ -1454,6 +1452,7 @@ export default function AdminDashboard() {
   });
 
   useEffect(() => {
+    // Remove body background, handled by container now
     document.body.style.background = '';
     document.body.style.margin = '0';
     document.body.style.minHeight = '100vh';
@@ -1516,7 +1515,7 @@ export default function AdminDashboard() {
         showMessage('Role updated successfully!', 'success');
         document.getElementById('email').value = '';
         document.getElementById('role').value = '';
-        setTimeout(() => setRefreshApp(true), 1000);
+        setTimeout(() => setRefreshApp(true), 1000); // Adds a 1-second delay before refreshing the app
       } else {
         showMessage(`Error! ${data.message || 'Failed to update role.'}`, 'error');
       }
@@ -1526,19 +1525,19 @@ export default function AdminDashboard() {
   };
 
   const fetchInstructors = async () => {
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch('http://localhost:5000/api/admin/teachers', {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-      const data = await response.json();
-      setInstructors(data);
-    } catch (error) {
-      console.error('Failed to fetch instructors:', error);
-    }
+      try {
+          const token = localStorage.getItem('token');
+          const response = await fetch('http://localhost:5000/api/admin/teachers', {
+            method: 'GET',
+              headers: {
+                  Authorization: `Bearer ${token}`,
+              },
+          });
+          const data = await response.json();
+          setInstructors(data);
+      } catch (error) {
+          console.error('Failed to fetch instructors:', error);
+      }
   };
 
   useEffect(() => {
@@ -1555,6 +1554,7 @@ export default function AdminDashboard() {
         },
       });
       const data = await response.json();
+      // Map backend fields to expected frontend fields
       const mappedCourses = Array.isArray(data)
         ? data.map(course => ({
             id: course._id || course.id,
@@ -1639,77 +1639,77 @@ export default function AdminDashboard() {
   };
 
   const handleEditCourseSelect = async (selectedCourseId) => {
-    setEditCourseId(selectedCourseId);
-
-    if (!selectedCourseId) {
-      setEditCourseDetails({
-        courseId: '',
-        courseName: '',
-        openCourse: false,
-        startDate: '',
-        endDate: ''
-      });
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/course/${selectedCourseId}`, {
-        method: 'GET',
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
-
-      if (response.ok) {
-        const course = await response.json();
-        setEditCourseDetails({
-          courseId: course.courseId,
-          courseName: course.courseName,
-          openCourse: course.openCourse,
-          startDate: course.startDate ? course.startDate.split('T')[0] : '',
-          endDate: course.endDate ? course.endDate.split('T')[0] : ''
-        });
-      } else {
-        showMessage('Failed to fetch course details!', 'error');
+      setEditCourseId(selectedCourseId);
+      
+      if (!selectedCourseId) {
+          setEditCourseDetails({
+              courseId: '',
+              courseName: '',
+              openCourse: false,
+              startDate: '',
+              endDate: ''
+          });
+          return;
       }
-    } catch (error) {
-      showMessage('Error fetching course details!', 'error');
-    }
+
+      try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`http://localhost:5000/api/admin/course/${selectedCourseId}`, {
+              method: 'GET',
+              headers: {
+                  Authorization: `Bearer ${token}`,
+              },
+          });
+
+          if (response.ok) {
+              const course = await response.json();
+              setEditCourseDetails({
+                  courseId: course.courseId,
+                  courseName: course.courseName,
+                  openCourse: course.openCourse,
+                  startDate: course.startDate ? course.startDate.split('T')[0] : '',
+                  endDate: course.endDate ? course.endDate.split('T')[0] : ''
+              });
+          } else {
+              showMessage('Failed to fetch course details!', 'error');
+          }
+      } catch (error) {
+          showMessage('Error fetching course details!', 'error');
+      }
   };
 
   const handleCourseUpdate = async (event) => {
-    event.preventDefault();
+      event.preventDefault();
 
-    if (!editCourseId) {
-      showMessage('Please select a course to edit!', 'error');
-      return;
-    }
-
-    try {
-      const token = localStorage.getItem('token');
-      const response = await fetch(`http://localhost:5000/api/admin/update-course/${editCourseId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify(editCourseDetails),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        showMessage(data.message, 'success');
-        setEditCourseId('');
-        handleEditCourseSelect('');
-        fetchCourses();
-      } else {
-        showMessage(`Error: ${data.message || 'Failed to update course'}`, 'error');
+      if (!editCourseId) {
+          showMessage('Please select a course to edit!', 'error');
+          return;
       }
-    } catch (error) {
-      showMessage('An error occurred while updating the course', 'error');
-    }
+
+      try {
+          const token = localStorage.getItem('token');
+          const response = await fetch(`http://localhost:5000/api/admin/update-course/${editCourseId}`, {
+              method: 'PUT',
+              headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${token}`,
+              },
+              body: JSON.stringify(editCourseDetails),
+          });
+
+          const data = await response.json();
+
+          if (response.ok) {
+              showMessage(data.message, 'success');
+              setEditCourseId('');
+              handleEditCourseSelect('');
+              fetchCourses();
+          } else {
+              showMessage(`Error: ${data.message || 'Failed to update course'}`, 'error');
+          }
+      } catch (error) {
+          showMessage('An error occurred while updating the course', 'error');
+      }
   };
 
   const handleCourseDelete = async (event) => {
@@ -1738,6 +1738,7 @@ export default function AdminDashboard() {
         fetchCourses();
         fetchBatches();
         handleEditCourseSelect();
+        // setCourses(courses.filter(course => course.id !== courseData.courseId));
       } else {
         const data = await response.json();
         showMessage(`Error: ${data.message || 'Failed to delete course.'}`, 'error');
@@ -1750,6 +1751,7 @@ export default function AdminDashboard() {
   const handleBatchSubmit = async (event) => {
     event.preventDefault();
 
+    // Prepare the batch data to send (ensure correct field names)
     const batchData = {
       batchId: batchDetails.batchId,
       instructor: batchDetails.instructor,
@@ -1774,9 +1776,10 @@ export default function AdminDashboard() {
         setBatchDetails({
           batchId: '',
           instructor: '',
-          course: ''
+          course: '' // Reset course field
         });
         fetchBatches();
+        // setTimeout(() => setRefreshApp(true), 500); // Adds a 500ms delay before refreshing the app
       } else {
         showMessage(`Error! ${data.message || 'Failed to add batch.'}`, 'error');
       }
@@ -1788,7 +1791,7 @@ export default function AdminDashboard() {
 
   const handleEditBatchSelect = async (selectedBatchId) => {
     setEditBatchId(selectedBatchId);
-
+    
     if (!selectedBatchId) {
       setEditBatchDetails({
         batchId: '',
@@ -1876,6 +1879,7 @@ export default function AdminDashboard() {
         showMessage(data.message, 'success');
         fetchBatches();
         handleEditBatchSelect('');
+        // setBatches(batches.filter(batch => batch._id !== selectedBatchId));
         setSelectedBatchId('');
       } else {
         showMessage(data.message || 'Failed to delete batch.', 'error');
@@ -1902,40 +1906,33 @@ export default function AdminDashboard() {
       }
     };
     if (activeTab === 'home') {
-      fetchCounts();
-    }
+        fetchCounts();
+      }
   }, [activeTab]);
+
 
   return (
     <div className={`admin-dashboard-bg${sidebarOpen ? ' sidebar-open' : ''}`}>
       <div className="profile-menu">
         <ProfileMenu user={user} onLogout={logout} onProfile={() => setActiveTab('profile')} />
       </div>
-      <button
-        className="sidebar-toggle-btn"
-        onClick={handleSidebarToggle}
-        aria-label="Toggle sidebar"
-      >
-        <span></span>
-        <span></span>
-        <span></span>
+      <button className="sidebar-toggle-btn" onClick={handleSidebarToggle} aria-label="Toggle sidebar">
+        <span className="sidebar-toggle-bar"></span>
+        <span className="sidebar-toggle-bar"></span>
+        <span className="sidebar-toggle-bar"></span>
       </button>
-      <div className={`admin-dashboard-sidebar${sidebarOpen ? ' open' : ' collapsed'}`} onClick={() => setSidebarOpen(!sidebarOpen)}>
-        <h2>Admin Panel</h2>
-        {sidebarOpen && (
-          <>
-            <button onClick={() => setActiveTab('home')} className={activeTab === 'home' ? 'active' : ''}>🏠 Home</button>
-            <button onClick={() => setActiveTab('role')} className={activeTab === 'role' ? 'active' : ''}>🧑‍💼 Role Manager</button>
-            <button onClick={() => setActiveTab('course')} className={activeTab === 'course' ? 'active' : ''}>📚 Course Manager</button>
-            <button onClick={() => setActiveTab('batch')} className={activeTab === 'batch' ? 'active' : ''}>📘 Batch Manager</button>
-            <button onClick={logout} style={{ marginTop: 'auto' }}>🚪 Logout</button>
-          </>
-        )}
+      <div className={`admin-dashboard-sidebar${sidebarOpen ? ' open' : ' collapsed'}`}>
+        <h2 className="sidebar-title">Admin Panel</h2>
+        <button onClick={() => setActiveTab('home')} className={`sidebar-btn${activeTab === 'home' ? ' active' : ''}`}>🏠 Home</button>
+        <button onClick={() => setActiveTab('role')} className={`sidebar-btn${activeTab === 'role' ? ' active' : ''}`}>🧑‍💼 Role Manager</button>
+        <button onClick={() => setActiveTab('course')} className={`sidebar-btn${activeTab === 'course' ? ' active' : ''}`}>📚 Course Manager</button>
+        <button onClick={() => setActiveTab('batch')} className={`sidebar-btn${activeTab === 'batch' ? ' active' : ''}`}>📘 Batch Manager</button>
+        <button onClick={logout} className="sidebar-btn logout-btn">🚪 Logout</button>
       </div>
       <main className={`admin-dashboard-main${sidebarOpen ? ' sidebar-open' : ''}`}>
         <div className="admin-dashboard-content">
           {activeTab === 'home' && (
-            <div>
+            <div className="dashboard-home">
               <h2 className="section-heading">Welcome to the Admin Dashboard</h2>
               <div className="dashboard-cards">
                 <div className="dashboard-card teachers">
@@ -1958,30 +1955,23 @@ export default function AdminDashboard() {
           )}
           {activeTab === 'profile' && (
             <div className="profile-section">
-              <h2>Profile</h2>
+              <h2 className="section-heading">Profile</h2>
               <p><strong>Name:</strong> {user.name}</p>
               <p><strong>Email:</strong> {user.email}</p>
-              <p>
-                <strong>Role:</strong> {user.role.charAt(0).toUpperCase() + user.role.slice(1)}
-              </p>
-              <button onClick={() => navigate('/change-password')}>Change Password</button>
+              <p><strong>Role:</strong> {user.role.charAt(0).toUpperCase() + user.role.slice(1)}</p>
+              <button className="primary-btn" onClick={() => navigate('/change-password')}>Change Password</button>
             </div>
           )}
           {activeTab === 'role' && (
-            <div>
+            <div className="role-section">
               <h2 className="section-heading">Role Manager</h2>
-              <p className="role-manager-desc">Update the role of a user by providing their User Email ID and selecting a new role.</p>
-              <form onSubmit={handleRoleUpdate} className="role-manager-form">
-                <div>
+              <p className="role-desc">Update the role of a user by providing their User Email ID and selecting a new role.</p>
+              <form onSubmit={handleRoleUpdate} className="role-form">
+                <div className="form-row">
                   <label htmlFor="email">Email ID</label>
-                  <input
-                    type="email"
-                    id="email"
-                    name="email"
-                    placeholder="Enter user email ID"
-                  />
+                  <input type="email" id="email" name="email" placeholder="Enter user email ID" />
                 </div>
-                <div>
+                <div className="form-row">
                   <label htmlFor="role">Select Role</label>
                   <select id="role" name="role">
                     <option value="admin">Admin</option>
@@ -1989,292 +1979,189 @@ export default function AdminDashboard() {
                     <option value="student">Student</option>
                   </select>
                 </div>
-                <div>
-                  <button type="submit">Update Role</button>
+                <div className="form-row">
+                  <button type="submit" className="primary-btn">Update Role</button>
                 </div>
               </form>
             </div>
           )}
           {activeTab === 'course' && (
-            <div style={{ width: '100%', minWidth: '1000px' }}>
+            <div className="course-section">
               <h2 className="section-heading">Course Manager</h2>
-              <p className="course-manager-desc">
+              <p className="course-desc">
                 You can add new courses, view existing courses, update course details, and delete courses.
               </p>
               <div className="course-manager">
-                <div className="add-course">
+                <div className="add-course card">
                   <h3>Add New Course</h3>
                   <form onSubmit={handleCourseSubmit}>
-                    <div>
+                    <div className="form-row">
                       <label htmlFor="courseId">Course ID</label>
-                      <input
-                        type="text"
-                        id="courseId"
-                        name="courseId"
-                        placeholder="Enter course ID"
-                        value={courseDetails.courseId}
-                        onChange={(e) => setCourseDetails({ ...courseDetails, courseId: e.target.value })}
-                      />
+                      <input type="text" id="courseId" name="courseId" placeholder="Enter course ID" value={courseDetails.courseId} onChange={e => setCourseDetails({ ...courseDetails, courseId: e.target.value })} />
                     </div>
-                    <div>
+                    <div className="form-row">
                       <label htmlFor="courseName">Course Name</label>
-                      <input
-                        type="text"
-                        id="courseName"
-                        name="courseName"
-                        placeholder="Enter course name"
-                        value={courseDetails.courseName}
-                        onChange={(e) => setCourseDetails({ ...courseDetails, courseName: e.target.value })}
-                      />
+                      <input type="text" id="courseName" name="courseName" placeholder="Enter course name" value={courseDetails.courseName} onChange={e => setCourseDetails({ ...courseDetails, courseName: e.target.value })} />
                     </div>
-                    <div>
+                    <div className="form-row">
                       <label htmlFor="openCourse">Open Course</label>
-                      <input
-                        type="checkbox"
-                        id="openCourse"
-                        name="openCourse"
-                        checked={courseDetails.openCourse || false}
-                        onChange={(e) => setCourseDetails({ ...courseDetails, openCourse: e.target.checked })}
-                      />
+                      <input type="checkbox" id="openCourse" name="openCourse" checked={courseDetails.openCourse || false} onChange={e => setCourseDetails({ ...courseDetails, openCourse: e.target.checked })} />
                     </div>
-                    <div>
+                    <div className="form-row">
                       <label htmlFor="startDate">Start Date</label>
-                      <input
-                        type="date"
-                        id="startDate"
-                        name="startDate"
-                        value={courseDetails.startDate || ''}
-                        onChange={(e) => setCourseDetails({ ...courseDetails, startDate: e.target.value })}
-                      />
+                      <input type="date" id="startDate" name="startDate" value={courseDetails.startDate || ''} onChange={e => setCourseDetails({ ...courseDetails, startDate: e.target.value })} />
                     </div>
-                    <div>
+                    <div className="form-row">
                       <label htmlFor="endDate">End Date</label>
-                      <input
-                        type="date"
-                        id="endDate"
-                        name="endDate"
-                        value={courseDetails.endDate || ''}
-                        onChange={(e) => setCourseDetails({ ...courseDetails, endDate: e.target.value })}
-                      />
+                      <input type="date" id="endDate" name="endDate" value={courseDetails.endDate || ''} onChange={e => setCourseDetails({ ...courseDetails, endDate: e.target.value })} />
                     </div>
-                    <div>
-                      <button type="submit">Add Course</button>
+                    <div className="form-row">
+                      <button type="submit" className="primary-btn">Add Course</button>
                     </div>
                   </form>
                 </div>
-                <div className="edit-course">
+                <div className="edit-course card">
                   <h3>Edit Course</h3>
-                  <div>
+                  <div className="form-row">
                     <label>Select Course to Edit</label>
-                    <select
-                      value={editCourseId}
-                      onChange={(e) => handleEditCourseSelect(e.target.value)}
-                    >
+                    <select value={editCourseId} onChange={e => handleEditCourseSelect(e.target.value)}>
                       <option value="">Select Course</option>
-                      {courses.map((course) => (
-                        <option key={course.id} value={course.id}>
-                          {course.courseId} - {course.name}
-                        </option>
+                      {courses.map(course => (
+                        <option key={course.id} value={course.id}>{course.courseId} - {course.name}</option>
                       ))}
                     </select>
                   </div>
                   {editCourseId && (
                     <form onSubmit={handleCourseUpdate}>
-                      <div>
+                      <div className="form-row">
                         <label>Course ID</label>
-                        <input
-                          type="text"
-                          value={editCourseDetails.courseId}
-                          onChange={(e) => setEditCourseDetails({ ...editCourseDetails, courseId: e.target.value })}
-                        />
+                        <input type="text" value={editCourseDetails.courseId} onChange={e => setEditCourseDetails({ ...editCourseDetails, courseId: e.target.value })} />
                       </div>
-                      <div>
+                      <div className="form-row">
                         <label>Course Name</label>
-                        <input
-                          type="text"
-                          value={editCourseDetails.courseName}
-                          onChange={(e) => setEditCourseDetails({ ...editCourseDetails, courseName: e.target.value })}
-                        />
+                        <input type="text" value={editCourseDetails.courseName} onChange={e => setEditCourseDetails({ ...editCourseDetails, courseName: e.target.value })} />
                       </div>
-                      <div>
+                      <div className="form-row">
                         <label>Open Course</label>
-                        <input
-                          type="checkbox"
-                          checked={editCourseDetails.openCourse || false}
-                          onChange={(e) => setEditCourseDetails({ ...editCourseDetails, openCourse: e.target.checked })}
-                        />
+                        <input type="checkbox" checked={editCourseDetails.openCourse || false} onChange={e => setEditCourseDetails({ ...editCourseDetails, openCourse: e.target.checked })} />
                       </div>
-                      <div>
+                      <div className="form-row">
                         <label>Start Date</label>
-                        <input
-                          type="date"
-                          value={editCourseDetails.startDate || ''}
-                          onChange={(e) => setEditCourseDetails({ ...editCourseDetails, startDate: e.target.value })}
-                        />
+                        <input type="date" value={editCourseDetails.startDate || ''} onChange={e => setEditCourseDetails({ ...editCourseDetails, startDate: e.target.value })} />
                       </div>
-                      <div>
+                      <div className="form-row">
                         <label>End Date</label>
-                        <input
-                          type="date"
-                          value={editCourseDetails.endDate || ''}
-                          onChange={(e) => setEditCourseDetails({ ...editCourseDetails, endDate: e.target.value })}
-                        />
+                        <input type="date" value={editCourseDetails.endDate || ''} onChange={e => setEditCourseDetails({ ...editCourseDetails, endDate: e.target.value })} />
                       </div>
-                      <div>
-                        <button type="submit">Update Course</button>
+                      <div className="form-row">
+                        <button type="submit" className="primary-btn">Update Course</button>
                       </div>
                     </form>
                   )}
                 </div>
-                <div className="delete-course">
+                <div className="delete-course card">
                   <h3>Delete Course</h3>
-                  <div>
-                    <select
-                      value={courseId}
-                      onChange={(e) => setCourseId(e.target.value)}
-                    >
+                  <div className="form-row">
+                    <select value={courseId} onChange={e => setCourseId(e.target.value)}>
                       <option value="">Select Course</option>
-                      {courses.map((course) => (
-                        <option key={course.id} value={course.id}>
-                          {course.courseId} - {course.name}
-                        </option>
+                      {courses.map(course => (
+                        <option key={course.id} value={course.id}>{course.courseId} - {course.name}</option>
                       ))}
                     </select>
-                    <button onClick={handleCourseDelete}>Delete Course</button>
+                    <button onClick={handleCourseDelete} className="primary-btn">Delete Course</button>
                   </div>
                 </div>
               </div>
             </div>
           )}
           {activeTab === 'batch' && (
-            <div style={{ width: '100%', minWidth: '1000px' }}>
+            <div className="batch-section">
               <h2 className="section-heading">Batch Manager</h2>
-              <p className="batch-manager-desc">
+              <p className="batch-desc">
                 You can add new batches, view existing batches, update batch details, and delete batches.
               </p>
               <div className="batch-manager">
-                <div className="add-batch">
+                <div className="add-batch card">
                   <h3>Add New Batch</h3>
                   <form onSubmit={handleBatchSubmit}>
-                    <div>
+                    <div className="form-row">
                       <label htmlFor="batchId">Batch ID</label>
-                      <input
-                        type="text"
-                        id="batchId"
-                        name="batchId"
-                        placeholder="Enter batch ID"
-                        value={batchDetails.batchId}
-                        onChange={(e) => setBatchDetails({ ...batchDetails, batchId: e.target.value })}
-                      />
+                      <input type="text" id="batchId" name="batchId" placeholder="Enter batch ID" value={batchDetails.batchId} onChange={e => setBatchDetails({ ...batchDetails, batchId: e.target.value })} />
                     </div>
-                    <div>
+                    <div className="form-row">
                       <label htmlFor="instructor">Instructor</label>
-                      <select
-                        id="instructor"
-                        name="instructor"
-                        value={batchDetails.instructor}
-                        onChange={(e) => setBatchDetails({ ...batchDetails, instructor: e.target.value })}
-                      >
+                      <select id="instructor" name="instructor" value={batchDetails.instructor} onChange={e => setBatchDetails({ ...batchDetails, instructor: e.target.value })}>
                         <option value="">Select Instructor</option>
-                        {instructors.map((instructor) => (
+                        {instructors.map(instructor => (
                           <option key={instructor._id} value={instructor._id}>{instructor.name}({instructor.email})</option>
                         ))}
                       </select>
                     </div>
-                    <div>
+                    <div className="form-row">
                       <label htmlFor="course">Course</label>
-                      <select
-                        id="course"
-                        name="course"
-                        value={batchDetails.course}
-                        onChange={(e) => setBatchDetails({ ...batchDetails, course: e.target.value })}
-                      >
+                      <select id="course" name="course" value={batchDetails.course} onChange={e => setBatchDetails({ ...batchDetails, course: e.target.value })}>
                         <option value="">Select Course</option>
-                        {courses.map((course) => (
-                          <option key={course.id} value={course.id}> {course.courseId} - {course.name}</option>
+                        {courses.map(course => (
+                          <option key={course.id} value={course.id}>{course.courseId} - {course.name}</option>
                         ))}
                       </select>
                     </div>
-                    <div>
-                      <button type="submit">Add Batch</button>
+                    <div className="form-row">
+                      <button type="submit" className="primary-btn">Add Batch</button>
                     </div>
                   </form>
                 </div>
-                <div className="edit-batch">
+                <div className="edit-batch card">
                   <h3>Edit Batch</h3>
-                  <div>
+                  <div className="form-row">
                     <label>Select Batch to Edit</label>
-                    <select
-                      value={editBatchId}
-                      onChange={(e) => handleEditBatchSelect(e.target.value)}
-                    >
+                    <select value={editBatchId} onChange={e => handleEditBatchSelect(e.target.value)}>
                       <option value="">Select Batch</option>
-                      {batches.map((batch) => (
-                        <option key={batch._id} value={batch._id}>
-                          {batch.batchId} - {batch.course.courseName} ({batch.instructor.name})
-                        </option>
+                      {batches.map(batch => (
+                        <option key={batch._id} value={batch._id}>{batch.batchId} - {batch.course.courseName} ({batch.instructor.name})</option>
                       ))}
                     </select>
                   </div>
                   {editBatchId && (
                     <form onSubmit={handleBatchUpdate}>
-                      <div>
+                      <div className="form-row">
                         <label>Batch ID</label>
-                        <input
-                          type="text"
-                          value={editBatchDetails.batchId}
-                          onChange={(e) => setEditBatchDetails({ ...editBatchDetails, batchId: e.target.value })}
-                        />
+                        <input type="text" value={editBatchDetails.batchId} onChange={e => setEditBatchDetails({ ...editBatchDetails, batchId: e.target.value })} />
                       </div>
-                      <div>
+                      <div className="form-row">
                         <label>Instructor</label>
-                        <select
-                          value={editBatchDetails.instructor}
-                          onChange={(e) => setEditBatchDetails({ ...editBatchDetails, instructor: e.target.value })}
-                        >
+                        <select value={editBatchDetails.instructor} onChange={e => setEditBatchDetails({ ...editBatchDetails, instructor: e.target.value })}>
                           <option value="">Select Instructor</option>
-                          {instructors.map((instructor) => (
-                            <option key={instructor._id} value={instructor._id}>
-                              {instructor.name}({instructor.email})
-                            </option>
+                          {instructors.map(instructor => (
+                            <option key={instructor._id} value={instructor._id}>{instructor.name}({instructor.email})</option>
                           ))}
                         </select>
                       </div>
-                      <div>
+                      <div className="form-row">
                         <label>Course</label>
-                        <select
-                          value={editBatchDetails.course}
-                          onChange={(e) => setEditBatchDetails({ ...editBatchDetails, course: e.target.value })}
-                        >
+                        <select value={editBatchDetails.course} onChange={e => setEditBatchDetails({ ...editBatchDetails, course: e.target.value })}>
                           <option value="">Select Course</option>
-                          {courses.map((course) => (
-                            <option key={course.id} value={course.id}>
-                              {course.courseId} - {course.name}
-                            </option>
+                          {courses.map(course => (
+                            <option key={course.id} value={course.id}>{course.courseId} - {course.name}</option>
                           ))}
                         </select>
                       </div>
-                      <div>
-                        <button type="submit">Update Batch</button>
+                      <div className="form-row">
+                        <button type="submit" className="primary-btn">Update Batch</button>
                       </div>
                     </form>
                   )}
                 </div>
-                <div className="delete-batch">
+                <div className="delete-batch card">
                   <h3>Delete Batch</h3>
-                  <div>
-                    <select
-                      value={selectedBatchId}
-                      onChange={(e) => setSelectedBatchId(e.target.value)}
-                    >
+                  <div className="form-row">
+                    <select value={selectedBatchId} onChange={e => setSelectedBatchId(e.target.value)}>
                       <option value="">Select Batch</option>
-                      {batches.map((batch) => (
-                        <option key={batch._id} value={batch._id}>
-                          {batch.batchId} - {batch.course.courseName} ({batch.instructor.name})
-                        </option>
+                      {batches.map(batch => (
+                        <option key={batch._id} value={batch._id}>{batch.batchId} - {batch.course.courseName} ({batch.instructor.name})</option>
                       ))}
                     </select>
-                    <button onClick={handleBatchDelete}>Delete Batch</button>
+                    <button onClick={handleBatchDelete} className="primary-btn">Delete Batch</button>
                   </div>
                 </div>
               </div>
