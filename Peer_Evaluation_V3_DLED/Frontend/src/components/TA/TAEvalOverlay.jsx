@@ -13,7 +13,6 @@ const TAEvalOverlay = ({
     feedbacks: [],
   });
 
-  // Initialize form data when selectedTAEvaluation changes
   useEffect(() => {
     if (selectedTAEvaluation) {
       setFormData({
@@ -43,7 +42,6 @@ const TAEvalOverlay = ({
     e.preventDefault();
     const totalScore = formData.scores.reduce((sum, score) => sum + score, 0);
     
-    // Validate total score
     if (totalScore > selectedTAEvaluation?.exam.totalMarks) {
       showMessage(`Total score ${totalScore} cannot exceed maximum marks ${selectedTAEvaluation.exam.totalMarks}`, 'info');
       return;

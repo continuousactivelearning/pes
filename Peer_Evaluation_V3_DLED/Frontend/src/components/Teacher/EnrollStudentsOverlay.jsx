@@ -68,15 +68,18 @@ const EnrollStudentsOverlay = ({ isOpen, onClose, onSubmit, course, batch, close
               style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff', color: '#000' }}
             />
           </div>
+
           {/* Show course and batch info, not as input */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px', textAlign: 'left' }}>Course:</label>
             <span style={{ color: '#3f3d56' }}>{course.name}</span>
           </div>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px', textAlign: 'left' }}>Batch:</label>
             <span style={{ color: '#3f3d56' }}>{batch.name}</span>
           </div>
+          
           <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1rem' }}>
             <button type="submit" style={{ padding: '0.5rem 1rem', borderRadius: '4px', backgroundColor: '#4b3c70', color: '#fff', border: 'none', cursor: 'pointer' }}>
               Submit

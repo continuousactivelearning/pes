@@ -58,7 +58,6 @@ const VerificationModal = ({ email, handleVerificationSuccess, handleVerificatio
       });
 
       const data = await response.json();
-      // console.log('Verification response:', data);
 
       if (response.ok) {
         showMessage('Email verified successfully!', 'success');
@@ -94,12 +93,11 @@ const VerificationModal = ({ email, handleVerificationSuccess, handleVerificatio
       });
 
       const data = await response.json();
-      // console.log('Resend response:', data);
 
       if (response.ok) {
         showMessage(data.message || 'New verification code sent!', 'success');
-        setTimeLeft(600); // Reset timer to 10 minutes
-        setVerificationCode(['', '', '', '']); // Clear current code
+        setTimeLeft(600);
+        setVerificationCode(['', '', '', '']);
       } else {
         console.error('Resend failed:', data);
         if (data.redirectToRegister) {
@@ -119,14 +117,12 @@ const VerificationModal = ({ email, handleVerificationSuccess, handleVerificatio
   };
 
   const handleCodeChange = (index, value) => {
-    // Only allow digits
     if (!/^\d*$/.test(value)) return;
     
     const newCode = [...verificationCode];
     newCode[index] = value;
     setVerificationCode(newCode);
 
-    // Auto-focus next input
     if (value && index < 3) {
       const nextInput = document.getElementById(`code-${index + 1}`);
       if (nextInput) nextInput.focus();
@@ -134,7 +130,6 @@ const VerificationModal = ({ email, handleVerificationSuccess, handleVerificatio
   };
 
   const handleKeyDown = (index, e) => {
-    // Handle backspace
     if (e.key === 'Backspace' && !verificationCode[index] && index > 0) {
       const prevInput = document.getElementById(`code-${index - 1}`);
       if (prevInput) prevInput.focus();
@@ -153,7 +148,6 @@ const VerificationModal = ({ email, handleVerificationSuccess, handleVerificatio
     
     setVerificationCode(newCode);
     
-    // Focus the next empty input or the last input
     const nextEmptyIndex = newCode.findIndex(code => !code);
     const targetIndex = nextEmptyIndex !== -1 ? nextEmptyIndex : 3;
     const targetInput = document.getElementById(`code-${targetIndex}`);

@@ -63,7 +63,6 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                             <button
                               onClick={() => handleEditClick(exam)}
                               style={{
-                                // padding: '0.5rem 1rem',
                                 borderRadius: '8px',
                                 color: '#ffffff',
                                 background: 'none',
@@ -78,13 +77,12 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                             </button>
 
                             <button
-                              onClick={() => handleDownloadPDF(exam._id)} // Pass examId when clicking the button
+                              onClick={() => handleDownloadPDF(exam._id)}
                               style={{
-                                // padding: '0.5rem 1rem',
                                 borderRadius: '8px',
                                 color: '#ffffff',
                                 background: 'none',
-                                border: ' #00008b 1px solid', // Indigo shade
+                                border: ' #00008b 1px solid',
                                 fontSize: '0.6rem',
                                 fontWeight: 'bold',
                                 cursor: 'pointer',
@@ -94,13 +92,12 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                               }}
                               title="Download PDF"
                             >
-                              <FaDownload style={{ color: ' #00008b', fontSize: '1.2rem' }} /> {/* Indigo shade */}
+                              <FaDownload style={{ color: ' #00008b', fontSize: '1.2rem' }} />
                             </button>
                             
                             <button
-                              onClick={() => handleBulkUploadClick(exam._id)} // Pass examId when clicking the button
+                              onClick={() => handleBulkUploadClick(exam._id)}
                               style={{
-                                // padding: '0.5rem 1rem',
                                 borderRadius: '8px',
                                 color: '#ffffff',
                                 background: 'none',
@@ -117,7 +114,6 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                             <button
                               onClick={() => handleSendEvaluation(exam._id)}
                               style={{
-                                // padding: '0.5rem 1rem',
                                 borderRadius: '8px',
                                 color: '#ffffff',
                                 background: 'none',
@@ -139,7 +135,6 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                             <button
                               onClick={() => handleFlagEvaluations(exam._id)}
                               style={{
-                                // padding: '0.5rem 1rem',
                                 borderRadius: '8px',
                                 color: '#ffffff',
                                 background: 'none',
@@ -158,7 +153,6 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                         <button
                           onClick={() => handleMarkAsDone(exam._id)}
                           style={{
-                            // padding: '0.5rem 1rem',
                             borderRadius: '8px',
                             color: '#ffffff',
                             background: 'none',
@@ -178,7 +172,6 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                         <button
                           onClick={() => handleDeleteExam(exam._id)}
                           style={{
-                            // padding: '0.5rem 1rem',
                             borderRadius: '8px',
                             color: '#ffffff',
                             background: 'none',

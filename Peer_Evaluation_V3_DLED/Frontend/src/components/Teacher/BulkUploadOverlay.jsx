@@ -15,7 +15,7 @@ const BulkUploadOverlay = ({ examId, onClose, onUpload }) => {
 
   const handleOverlayClick = (e) => {
     if (e.target.className === 'overlay') {
-      onClose(); // Close the overlay when clicking outside the modal
+      onClose();
     }
   };
 
@@ -48,10 +48,11 @@ const BulkUploadOverlay = ({ examId, onClose, onUpload }) => {
         }}
       >
         <div className="modal-header" style={{ marginBottom: '1rem' }}>
-          <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#3f3d56' }}> {/* Updated heading color */}
+          <h2 style={{ margin: 0, fontSize: '1.5rem', color: '#3f3d56' }}>
             Bulk Upload
           </h2>
         </div>
+
         <div className="modal-body" style={{ marginBottom: '1.5rem' }}>
           <input
             type="file"
@@ -77,6 +78,7 @@ const BulkUploadOverlay = ({ examId, onClose, onUpload }) => {
             </ul>
           )}
         </div>
+        
         <div className="modal-footer" style={{ display: 'flex', justifyContent: 'flex-end' }}>
           <button
             className="btn btn-primary"

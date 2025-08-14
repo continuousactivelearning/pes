@@ -64,7 +64,6 @@ const ScheduleExamOverlay = ({ isOpen, onClose, onSubmit, batch }) => {
         boxShadow: '0 4px 16px rgba(0, 0, 0, 0.2)',
       }}>
         <h2 style={{ color: '#3f3d56', marginBottom: '1rem' }}>Schedule Exam</h2>
-        {/* Updated the overlay form to display labels and input fields in a single line with individual fields for editing */}
         <form onSubmit={handleScheduleExamSubmit} encType="multipart/form-data" style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
             <label style={{ color: '#3f3d56', fontWeight: 'bold', whiteSpace: 'nowrap', width: '150px', textAlign: 'left' }}>Name:</label>
@@ -176,4 +175,3 @@ const ScheduleExamOverlay = ({ isOpen, onClose, onSubmit, batch }) => {
 };
 
 export default ScheduleExamOverlay;
-// This component is a modal overlay for scheduling an exam. It includes form fields for exam details and handles submission.

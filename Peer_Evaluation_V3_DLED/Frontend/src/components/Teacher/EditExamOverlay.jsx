@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
 const EditExamOverlay = ({ isOpen, exam, onClose, onSubmit }) => {
-  // console.log('EditExamOverlay rendered with exam:', exam);
   const formattedDate = exam.date ? new Date(exam.date).toISOString().split('T')[0] : '';
   const [formData, setFormData] = useState({
     name: exam?.name || '',
@@ -26,8 +25,8 @@ const EditExamOverlay = ({ isOpen, exam, onClose, onSubmit }) => {
   const handleEditExamSubmit = (e) => {
     e.preventDefault();
     const updatedExam = {
-      ...exam, // Preserve original exam data, including object ID
-      ...formData, // Merge updated form data
+      ...exam,
+      ...formData,
     };
     onSubmit(updatedExam);
   };

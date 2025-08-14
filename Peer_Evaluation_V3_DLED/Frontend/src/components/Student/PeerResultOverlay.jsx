@@ -33,7 +33,6 @@ const PeerResultOverlay = ({
   const getDocumentUrl = () => {
     if (peerResultsForExam.length > 0 && peerResultsForExam[0].document) {
       const doc = peerResultsForExam[0].document;
-      // Adjust this URL based on your backend setup
       return `http://localhost:5000/${doc.documentPath}`;
     }
     return null;

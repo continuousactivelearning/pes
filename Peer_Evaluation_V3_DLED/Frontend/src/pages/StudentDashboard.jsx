@@ -56,7 +56,6 @@ export default function StudentDashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Remove body background, handled by container now
     document.body.style.background = '';
     document.body.style.margin = '0';
     document.body.style.minHeight = '100vh';
@@ -98,11 +97,9 @@ export default function StudentDashboard() {
     fetchDashboardStats();
   }, [activeTab]);
 
-  // Fetch enrolled courses and available courses on mount
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    // Fetch enrolled courses
     fetch('http://localhost:5000/api/student/enrolled-courses', {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -114,7 +111,6 @@ export default function StudentDashboard() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    // Fetch all available courses
     fetch('http://localhost:5000/api/student/available-courses', {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -123,7 +119,6 @@ export default function StudentDashboard() {
       .catch(() => setAvailableCourses([]));
   }, []);
 
-  // Fetch batches for selected course
   useEffect(() => {
     if (!selectedCourse) {
       setAvailableBatches([]);
@@ -142,7 +137,6 @@ export default function StudentDashboard() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    // Fetch all batches student is enrolled in
     fetch('http://localhost:5000/api/student/enrolled-batches', {
       headers: { Authorization: `Bearer ${token}` },
     })
@@ -154,7 +148,6 @@ export default function StudentDashboard() {
   useEffect(() => {
     const token = localStorage.getItem('token');
     if (!token) return;
-    // Fetch all exams for the student (optionally filter by batch)
     let url = 'http://localhost:5000/api/student/all-exams';
     if (selectedBatchForExam) url += `?batchId=${selectedBatchForExam}`;
     fetch(url, {
@@ -226,7 +219,6 @@ export default function StudentDashboard() {
       });
       const data = await res.json();
       if (res.ok && data) {
-        // Ensure taBatchInfo is always an array
         setTaBatchInfo(Array.isArray(data) ? data : [data]);
       }
     } catch (error) {
@@ -249,7 +241,6 @@ export default function StudentDashboard() {
       if (Array.isArray(data)) {
         setEvaluations(data);
 
-        // Extract unique exams from evaluations
         const uniqueExams = data.reduce((acc, evaluation) => {
           if (!acc.some(exam => exam.examId === evaluation.examId)) {
             acc.push({ examId: evaluation.examId, name: evaluation.examName, courseName: evaluation.courseName, batchName: evaluation.batchId });
@@ -303,7 +294,6 @@ export default function StudentDashboard() {
 
   const handleEnrollmentRequest = async (e) => {
     e.preventDefault();
-    // console.log('Enrollment request:', selectedCourse, selectedBatch);
     if (!selectedCourse || !selectedBatch) {
       showMessage('Please select both course and batch.');
       return;
@@ -434,7 +424,6 @@ export default function StudentDashboard() {
   const handleTAManageClick = async (assignment) => {
     setManageTAData(assignment);
     setShowTAManageOverlay(true);
-    // console.log("Assignment clicked:", assignment);
     const enrollmentsData = await fetchTAPendingEnrollments(assignment.batch_id);
     setPendingEnrollments(enrollmentsData);
     const evaluationsData = await fetchTAFlaggedEvaluations(assignment.batch_id);
@@ -880,7 +869,6 @@ export default function StudentDashboard() {
                   onClick={() => navigate('/change-password')}
                   style={{
                     background: ' #5c5470',
-                    // background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
                     border: 'none',
                     color: '#fff',
                     fontWeight: 600,

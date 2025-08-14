@@ -148,7 +148,6 @@ export default function ManageOverlay({
                         <th style={cellHeader}>Status</th>
                         <th style={cellHeader}>Feedback</th>
                         <th style={cellHeader}>Score</th>
-                        {/* <th style={cellHeader}>Ticket</th> */}
                         <th style={cellHeader}>Actions</th>
                       </tr>
                     </thead>
@@ -171,7 +170,6 @@ export default function ManageOverlay({
                               ? evalItem.score.reduce((sum, current) => sum + current, 0)
                               : evalItem.score}
                           </td>
-                          {/* <td style={cellStyle}>{evalItem.ticket}</td> */}
                           <td style={cellStyle}>
                             <div style={{ display: "flex", gap: "0.3rem", justifyContent: "center" }}>
                               <button style={btnAccept} onClick={() => TAEditEval(evalItem)}>
@@ -220,7 +218,6 @@ export default function ManageOverlay({
   );
 }
 
-// Reusable styles
 const cellStyle = {
   padding: "8px",
   textAlign: "center",

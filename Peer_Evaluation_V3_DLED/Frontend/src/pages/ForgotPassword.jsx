@@ -70,7 +70,6 @@ export default function ForgotPassword() {
                     top: 24,
                     left: 70,
                     background: 'linear-gradient(90deg,  #764ba2 0%, #667eea 100%)',
-                    //color: '#fff',
                     border: 'none',
                     borderRadius: '50%',
                     padding: '16px',

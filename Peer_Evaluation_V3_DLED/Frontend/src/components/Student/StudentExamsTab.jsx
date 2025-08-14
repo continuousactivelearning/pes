@@ -93,7 +93,6 @@ export default function StudentExamsTab({
           ))}
         </select>
       </div>
-      {/* style={{ maxHeight: '300px', maxWidth: '1300px', overflowY: 'auto', overflowX: 'auto', scrollbarWidth: 'thin', scrollbarColor: ' #4b3c70 transparent' }} */}
       <table
         style={{
           width: "100%",

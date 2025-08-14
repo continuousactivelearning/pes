@@ -101,4 +101,3 @@ function ProfileMenu({ user, onLogout, onProfile }) {
 }
 
 export default ProfileMenu;
-// This component renders a profile menu with options to view the profile and logout.

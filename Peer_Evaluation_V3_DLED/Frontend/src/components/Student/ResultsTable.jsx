@@ -16,7 +16,6 @@ const ResultsTable = ({
       color: "#2d3559",
       width: "100%",
     }}>
-      {/* Batch Dropdown */}
       {resultBatches.length > 0 ? (
         <div style={{
           display: "flex",
@@ -76,17 +75,15 @@ const ResultsTable = ({
         </div>
       )}
 
-      {/* Exams Table Container with Overflow */}
       {selectedResultBatch && (
         <div style={{
           width: "100%",
           overflowX: "auto",
           overflowY: "auto",
-          maxHeight: "60vh", // Limit height to prevent too much vertical scrolling
+          maxHeight: "60vh",
           border: "1px solid #e0e0e0",
           borderRadius: "8px",
           boxShadow: "0 4px 12px #4b3c70",
-          // Custom scrollbar styles
           scrollbarWidth: "thin",
           scrollbarColor: "#4b3c70 #f0f0f0",
         }}>
@@ -233,7 +230,6 @@ const ResultsTable = ({
         </div>
       )}
 
-      {/* Custom CSS for better scrollbar styling */}
       <style>{`
         .results-table-container::-webkit-scrollbar {
           width: 8px;

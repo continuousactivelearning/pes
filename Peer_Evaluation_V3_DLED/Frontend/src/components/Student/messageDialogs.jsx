@@ -1,6 +1,5 @@
 export const showRaiseTicketDialog = () => {
     return new Promise((resolve) => {
-        // Create overlay
         const overlay = document.createElement('div');
         overlay.style.position = 'fixed';
         overlay.style.top = 0;
@@ -13,7 +12,6 @@ export const showRaiseTicketDialog = () => {
         overlay.style.justifyContent = 'center';
         overlay.style.zIndex = 9999;
 
-        // Create dialog
         const dialog = document.createElement('div');
         dialog.style.background = '#fff';
         dialog.style.borderRadius = '14px';

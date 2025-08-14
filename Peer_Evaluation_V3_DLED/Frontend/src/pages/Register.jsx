@@ -1,6 +1,13 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { FaEye, FaEyeSlash, FaCheck, FaTimes, FaHome, FaUser } from "react-icons/fa";
+import {
+  FaEye,
+  FaEyeSlash,
+  FaCheck,
+  FaTimes,
+  FaHome,
+  FaUser,
+} from "react-icons/fa";
 import { showMessage } from "../utils/Message";
 import VerificationModal from "../components/User/VerificationModal";
 import "../styles/User/Register.css";
@@ -68,7 +75,6 @@ export default function Register() {
       [name]: value,
     });
 
-    // Validate password on change
     if (name === "password") {
       validatePassword(value);
     }
@@ -185,10 +191,8 @@ export default function Register() {
 
         <form onSubmit={handleRegister} className="register-form">
           {/* Name Field */}
-          <div className="form-group" >
-            <label htmlFor="name">
-              Name
-            </label>
+          <div className="form-group">
+            <label htmlFor="name">Name</label>
             <input
               id="name"
               name="name"
@@ -203,9 +207,7 @@ export default function Register() {
 
           {/* Email Field */}
           <div className="form-group">
-            <label htmlFor="email" >
-              Email
-            </label>
+            <label htmlFor="email">Email</label>
             <input
               id="email"
               name="email"
@@ -219,9 +221,7 @@ export default function Register() {
           </div>
 
           <div className="form-group password-group">
-            <label htmlFor="password">
-              Password
-            </label>
+            <label htmlFor="password">Password</label>
             <div className="password-container">
               <div className="password-input-wrapper">
                 <input
@@ -280,9 +280,7 @@ export default function Register() {
 
           {/* Role Field */}
           <div className="form-group">
-            <label htmlFor="role" >
-              Role
-            </label>
+            <label htmlFor="role">Role</label>
             <select
               id="role"
               name="role"

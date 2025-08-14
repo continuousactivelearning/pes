@@ -48,7 +48,6 @@ export default function TeacherDashboard() {
   const { setRefreshApp } = useContext(AppContext);
 
   useEffect(() => {
-    // Remove body background, handled by container now
     document.body.style.background = '';
     document.body.style.margin = '0';
     document.body.style.minHeight = '100vh';
@@ -117,16 +116,15 @@ export default function TeacherDashboard() {
         });
         const data = await response.json();
 
-        // Ensure the response is an array before setting state
         if (Array.isArray(data)) {
           setCoursesAndBatches(data);
         } else {
           console.error('Invalid response format:', data);
-          setCoursesAndBatches([]); // Fallback to empty array
+          setCoursesAndBatches([]);
         }
       } catch (error) {
         console.error('Failed to fetch courses and batches:', error);
-        setCoursesAndBatches([]); // Fallback to empty array
+        setCoursesAndBatches([]);
       }
     };
 
@@ -140,14 +138,13 @@ export default function TeacherDashboard() {
       );
       const batches = selectedCourse ? selectedCourse.batches : [];
       setFilteredBatches(batches);
-      setSelectedBatchId(""); // Reset batch selection when course changes
+      setSelectedBatchId("");
     } else {
       setFilteredBatches([]);
       setSelectedBatchId("");
     }
   }, [selectedCourseId, coursesAndBatches]);
 
-  // Fetch exams whenever the active tab is 'exam'
   useEffect(() => {
     if (activeTab === 'exam') {
       const fetchExams = async () => {
@@ -198,7 +195,6 @@ export default function TeacherDashboard() {
       }
     } catch (error) {
       console.error('Error refreshing exams list:', error);
-      // Optionally handle error
     }
   };
 
@@ -278,7 +274,7 @@ export default function TeacherDashboard() {
         showMessage(`Success: ${data.message} with ${data.statistics.enrolled} already enrolled, ${data.statistics.new_enrollment} new enrollments and ${data.statistics.pending_enrollment} pending requests accepted.`, 'success');
       } else if (response.status === 409) {
         const errorData = await response.json();
-        showMessage(`Info: ${errorData.message}`, 'info'); // Display informational message
+        showMessage(`Info: ${errorData.message}`, 'info');
       } else {
         const errorData = await response.json();
         showMessage(`Error!  ${errorData.message}`, 'error');
@@ -399,9 +395,6 @@ export default function TeacherDashboard() {
       if (response.ok) {
         const data = await response.json();
         showMessage('Exam updated successfully!', 'success');
-        // setExams((prevExams) =>
-        //   prevExams.map((exam) => (exam.id === updatedExam.id ? { ...exam, ...updatedExam } : exam))
-        // );
       } else {
         const errorData = await response.json();
         showMessage(`Error! ${errorData.message || 'Failed to update exam.'}`, 'error');
@@ -503,7 +496,6 @@ export default function TeacherDashboard() {
     }
   };
 
-  // Implement the logic to flag evaluations here
   const handleFlagEvaluations = async (examId) => {
     const confirmFlag = await showFlagEvaluationsDialog();
     if (!confirmFlag) return;
@@ -543,7 +535,6 @@ export default function TeacherDashboard() {
       });
       const data = await response.json();
       if (response.ok) {
-        // Remove the exam from the list in state
         setExams(prev => prev.filter(exam => exam._id !== examId));
         showMessage(data.message, 'success');
       } else {
@@ -570,7 +561,7 @@ export default function TeacherDashboard() {
 
       if (response.ok) {
         showMessage('Exam deleted successfully!', 'success');
-        setExams(exams.filter(exam => exam._id !== examId)); // Remove the deleted exam from the state
+        setExams(exams.filter(exam => exam._id !== examId));
       } else {
         const errorData = await response.json();
         showMessage(`Error! ${errorData.message}`, 'error');
@@ -832,9 +823,9 @@ export default function TeacherDashboard() {
       >
         <div className="teacher-dashboard-content" style={{
           ...contentStyle,
-          background: 'rgba(255,255,255,0.92)', // subtle card background
-          boxShadow: '0 8px 32px rgba(60,60,120,0.18)', // slightly stronger shadow
-          border: '1.5px solid #e3e6f0', // soft border for contrast
+          background: 'rgba(255,255,255,0.92)',
+          boxShadow: '0 8px 32px rgba(60,60,120,0.18)',
+          border: '1.5px solid #e3e6f0',
           maxWidth: 'none',
           width: '100%',
           height: '80vh',
@@ -960,7 +951,6 @@ export default function TeacherDashboard() {
                   onClick={() => navigate('/change-password')}
                   style={{
                     background: ' #5c5470',
-                    // background: 'linear-gradient(90deg, #667eea 0%, #764ba2 100%)',
                     border: 'none',
                     color: '#fff',
                     fontWeight: 600,
@@ -1102,7 +1092,7 @@ export default function TeacherDashboard() {
                           <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
                             <button
                               onClick={() => {
-                                setSelectedCourse(course);  // or course if you want full object
+                                setSelectedCourse(course);
                                 setSelectedBatch(batch);
                                 setEnrollOverlayOpen(true);
                               }}
@@ -1149,8 +1139,7 @@ export default function TeacherDashboard() {
                             >
                               Incentives
                             </button>
-                          </div>
-                          
+                          </div>                          
                         </td>
                       </tr>
                     ))
@@ -1240,16 +1229,16 @@ export default function TeacherDashboard() {
                 {/* Schedule Exam Button */}
                 <button
                   onClick={handleScheduleExam}
-                  disabled={!selectedCourseId || !selectedBatchId} // Button is disabled if either course or batch is not selected
+                  disabled={!selectedCourseId || !selectedBatchId}
                   style={{
                     padding: '0.6rem 1.2rem',
                     borderRadius: '12px',
-                    backgroundColor: selectedCourseId && selectedBatchId ? '#4b3c70' : '#a0a0a0', // Change color based on enabled/disabled state
+                    backgroundColor: selectedCourseId && selectedBatchId ? '#4b3c70' : '#a0a0a0',
                     color: '#ffffff',
                     border: 'none',
                     fontSize: '1rem',
                     fontWeight: 'bold',
-                    cursor: selectedCourseId && selectedBatchId ? 'pointer' : 'not-allowed', // Change cursor based on enabled/disabled state
+                    cursor: selectedCourseId && selectedBatchId ? 'pointer' : 'not-allowed',
                   }}
                 >
                   Schedule Exam
