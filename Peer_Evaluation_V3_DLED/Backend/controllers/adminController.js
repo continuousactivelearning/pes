@@ -239,15 +239,17 @@ export const updateBatch = async (req, res) => {
 
 export const getDashboardCounts = async (req, res) => {
   try {
-    const [teacherCount, courseCount, studentCount] = await Promise.all([
+    const [teacherCount, courseCount, batchCount, studentCount] = await Promise.all([
       User.countDocuments({ role: 'teacher' }),
       Course.countDocuments(),
+      Batch.countDocuments(),
       User.countDocuments({ role: 'student' })
     ]);
 
     res.status(200).json({
       teachers: teacherCount,
       courses: courseCount,
+      batches: batchCount,
       students: studentCount,
     });
   } catch (error) {

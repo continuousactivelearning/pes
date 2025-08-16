@@ -9,7 +9,6 @@ import emailValidator from 'email-validator';
 import { Batch } from '../models/Batch.js';
 import { VerificationCode } from '../models/VerificationCode.js';
 
-// Generate JWT token
 const generateToken = (id, role) => {
   return jwt.sign({ id, role }, process.env.JWT_SECRET || 'default_secret', {
     expiresIn: '30d'

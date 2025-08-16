@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FaChalkboardTeacher, FaBook, FaUserGraduate } from 'react-icons/fa';
+import { FaChalkboardTeacher, FaBook, FaLayerGroup, FaUserGraduate } from 'react-icons/fa';
 import '../styles/Admin/AdminDashboard.css';
 import { containerStyle, sidebarStyle, mainStyle, contentStyle, sectionHeading, buttonStyle } from '../styles/Admin/AdminDashboardStyles';
 import { showMessage } from '../utils/Message';
@@ -624,10 +624,15 @@ export default function AdminDashboard() {
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Teachers</h3>
                   <p style={{ fontSize: '1.2rem' }}>{counts.teachers}</p>
                 </div>
-                <div style={{ textAlign: 'center', padding: '1rem', borderRadius: '12px', background: 'linear-gradient(135deg, #32cd32, #125e12)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '200px', color: '#fff' }}>
+                <div style={{ textAlign: 'center', padding: '1rem', borderRadius: '12px', background: 'linear-gradient(135deg, #f093fb, #f5576c)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '200px', color: '#fff' }}>
                   <FaBook size={40} style={{ marginBottom: '0.5rem' }} />
                   <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Courses</h3>
                   <p style={{ fontSize: '1.2rem' }}>{counts.courses}</p>
+                </div>
+                <div style={{ textAlign: 'center', padding: '1rem', borderRadius: '12px', background: 'linear-gradient(135deg, #32cd32, #125e12)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '200px', color: '#fff' }}>
+                  <FaLayerGroup size={40} style={{ marginBottom: '0.5rem' }} />
+                  <h3 style={{ fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '0.5rem' }}>Batches</h3>
+                  <p style={{ fontSize: '1.2rem' }}>{counts.batches}</p>
                 </div>
                 <div style={{ textAlign: 'center', padding: '1rem', borderRadius: '12px', background: 'linear-gradient(135deg, #43cea2, #185a9d)', boxShadow: '0 4px 12px rgba(0,0,0,0.1)', width: '200px', color: '#fff' }}>
                   <FaUserGraduate size={40} style={{ marginBottom: '0.5rem' }} />

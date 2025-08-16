@@ -10,7 +10,7 @@ const verificationCodeSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  // Store registration data here instead of creating User
+  
   registrationData: {
     name: {
       type: String,
@@ -23,7 +23,7 @@ const verificationCodeSchema = new mongoose.Schema({
     },
     password: {
       type: String,
-      required: true, // This will be the hashed password
+      required: true,
     },
     role: {
       type: String,
@@ -34,7 +34,7 @@ const verificationCodeSchema = new mongoose.Schema({
   expiresAt: {
     type: Date,
     required: true,
-    index: { expireAfterSeconds: 0 }, // Auto-delete expired documents
+    index: { expireAfterSeconds: 0 },
   },
 }, {
   timestamps: true,

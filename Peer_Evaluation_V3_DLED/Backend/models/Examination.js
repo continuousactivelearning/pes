@@ -2,10 +2,9 @@ import mongoose from "mongoose";
 
 const ExaminationSchema = new mongoose.Schema({
     name: { type: String, required: true },
-    // course: { type: mongoose.Schema.Types.ObjectId, ref: 'Course', required: true },
     batch: { type: mongoose.Schema.Types.ObjectId, ref: 'Batch', required: true },
     date: { type: Date, required: true },
-    time: { type: String, required: true }, // Assuming time is a string in HH:MM format
+    time: { type: String, required: true },
     number_of_questions: { type: Number, required: true },
     duration: { type: Number, required: true },
     totalMarks: { type: Number, required: true },
