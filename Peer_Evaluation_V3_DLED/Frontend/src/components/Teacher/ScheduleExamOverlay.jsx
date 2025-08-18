@@ -85,7 +85,9 @@ const ScheduleExamOverlay = ({ isOpen, onClose, onSubmit, batch }) => {
               value={formData.date}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff', color: '#000' }}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff', color: '#000', colorScheme: 'auto' }}
+              onFocus={(e) => e.target.style.colorScheme = 'light'}
+              onBlur={(e) => e.target.style.colorScheme = 'auto'}
             />
           </div>
 
@@ -97,7 +99,9 @@ const ScheduleExamOverlay = ({ isOpen, onClose, onSubmit, batch }) => {
               value={formData.time}
               onChange={handleChange}
               required
-              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff', color: '#000' }}
+              style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', border: '1px solid #ccc', backgroundColor: '#fff', color: '#000', colorScheme: 'auto' }}
+              onFocus={(e) => e.target.style.colorScheme = 'light'}
+              onBlur={(e) => e.target.style.colorScheme = 'auto'}
             />
           </div>
 

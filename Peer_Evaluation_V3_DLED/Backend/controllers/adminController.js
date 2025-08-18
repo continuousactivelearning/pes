@@ -170,7 +170,6 @@ export const addBatch = async (req, res) => {
 
     res.status(200).json({ message: 'Batch added successfully!' });
   } catch (error) {
-    console.error('Error adding batch:', error);
     res.status(500).json({ message: 'Server error. Please try again later!' });
   }
 };
@@ -270,25 +269,19 @@ export const deleteCourse = async (req, res) => {
       return res.status(404).json({ message: 'Course not found!' });
     }
 
-    // Delete all batches associated with this course
     const batches = await Batch.find({ course: course._id });
     const batchIds = batches.map(batch => batch._id);
 
-    // Delete all batches associated with this course
     await Batch.deleteMany({ course: course._id });
 
-    // Delete all enrollments associated with this course
     await Enrollment.deleteMany({ course: courseId });
 
-    // Delete all examinations associated with the batches of this course
     await Examination.deleteMany({ batch: { $in: batchIds } });
 
-    // Delete the course
     await Course.findByIdAndDelete(courseId);
 
     res.status(200).json({ message: 'Course and associated batches deleted successfully!' });
   } catch (error) {
-    console.error('Error deleting course:', error);
     res.status(500).json({ message: 'Server error. Please try again later!' });
   }
 };
@@ -297,10 +290,8 @@ export const deleteBatch = async (req, res) => {
   try {
     const { batchId } = req.params;
 
-    // Delete all enrollments associated with the batch
     await Enrollment.deleteMany({ batch: batchId }); 
 
-    // Delete all exams associated with the batch
     await Examination.deleteMany({ batch: batchId });
 
     const deletedBatch = await Batch.findByIdAndDelete(batchId);

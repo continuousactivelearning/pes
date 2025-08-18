@@ -84,7 +84,6 @@ export const assignTA = async (req, res) => {
 
     return res.status(200).json({ message: 'TA assigned to batch successfully.' });
   } catch (err) {
-    console.error('Error assigning TA:', err);
     return res.status(500).json({ message: 'Failed to assign TA.', error: err.message });
   }
 };
@@ -122,7 +121,6 @@ export const deassignTA = async (req, res) => {
 
     return res.status(200).json({ message: 'TA deassigned from batch successfully.' });
   } catch (err) {
-    console.error('Error deassigning TA:', err);
     return res.status(500).json({ message: 'Failed to deassign TA.', error: err.message });
   }
 };
@@ -144,23 +142,19 @@ function generateStrongPassword() {
   password += all[Math.floor(Math.random() * all.length)];
   }
 
-  // Shuffle password to avoid predictable order
   return password.split('').sort(() => 0.5 - Math.random()).join('');
 }
 
 export const getTeacherCoursesAndBatches = async (req, res) => {
   try {
-    const teacherId = req.user._id; // Assuming authentication middleware sets req.user
-    // console.log('Fetching batches and courses for teacher ID:', teacherId);
+    const teacherId = req.user._id;
 
-    // Find all batches assigned to this teacher and populate the course field
     const batches = await Batch.find({ instructor: teacherId }).populate('course');
 
     if (!batches || batches.length === 0) {
       return res.status(404).json({ message: 'No batches found for this teacher.' });
     }
 
-    // Structure: courseId => { name, batches: [] }
     const courseMap = {};
 
     batches.forEach(batch => {
@@ -174,7 +168,7 @@ export const getTeacherCoursesAndBatches = async (req, res) => {
       }
       courseMap[course._id].batches.push({
         id: batch._id,
-        name: batch.batchId, // You can also use `batchName` if available
+        name: batch.batchId,
       });
     });
 
@@ -182,7 +176,6 @@ export const getTeacherCoursesAndBatches = async (req, res) => {
 
     res.status(200).json(result);
   } catch (error) {
-    console.error('Error fetching batches and courses for teacher:', error);
     res.status(500).json({ message: 'Server error. Please try again later.' });
   }
 };
@@ -201,16 +194,16 @@ export const studentsEnroll = async (req, res) => {
 
     fs.createReadStream(csvFile)
     .pipe(csv({
-      mapHeaders: ({ header }) => header.trim().toLowerCase(), // normalize
+      mapHeaders: ({ header }) => header.trim().toLowerCase(),
     }))
     .on('data', (row) => {
       if (!row.name || !row.email) {
         console.error('Missing name or email in row:', row);
-        return; // Skip rows with missing data
+        return;
       }
       students.push({
         name: row.name,
-        email: row.email.trim(), // Normalize email
+        email: row.email.trim(),
       });
     })
     .on('end', async () => {
@@ -239,9 +232,6 @@ export const studentsEnroll = async (req, res) => {
               isVerified: true,
             });
 
-            // await user.save();
-
-            // Send welcome email
             const htmlcontent = `
               <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
                 <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -307,25 +297,19 @@ export const studentsEnroll = async (req, res) => {
             await user.save();
           }
 
-          // Check if the student is already enrolled in the course and batch
           const existingEnrollment = await Enrollment.findOne({ student: user._id, course, batch });
           if (existingEnrollment && existingEnrollment.status === 'active') {
-            // Fetch batch and course details to get their names/ids
             const batchDoc = await Batch.findById(batch);
             const courseDoc = await Course.findById(course);
             const batchName = batchDoc ? batchDoc.batchId : batch;
             const courseName = courseDoc ? courseDoc.courseName : course;
             enrolled++;
-            // console.error(`Student ${student.name} is already enrolled in the batch ${batchName} of course ${courseName}.`);
-            // return res.status(409).json({ message: `Student ${student.name} is already enrolled in the batch ${batchName} of course ${courseName}.` });
             continue;
           }
           else if (existingEnrollment && existingEnrollment.status === 'pending') {
             existingEnrollment.status = 'active';
             await existingEnrollment.save();
             pending_enrollment++;
-            // return res.status(409).json({message: 'Students enrolled by accepting the pending enrollment request.'});
-            // console.log(`Student ${student.name} already has a pending enrollment request, now activated.`);
           }
           else{
             const enrollment = new Enrollment({
@@ -348,7 +332,6 @@ export const studentsEnroll = async (req, res) => {
         res.status(200).json({ message: 'Students enrolled successfully', statistics: { enrolled, pending_enrollment, new_enrollment } });
       });
   } catch (error) {
-    console.error(error);
     res.status(500).json({ message: 'An error occurred while enrolling students.' });
   }
 };
@@ -371,8 +354,8 @@ export const getEnrolledStudents = async (req, res) => {
       name: enrollment.student.name,
       email: enrollment.student.email,
       enrollmentDate: enrollment.enrollmentDate ? new Date(enrollment.enrollmentDate).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : 'N/A',
-      batchName: enrollment.batch.batchId, // Assuming batchId is the identifier for the batch
-      courseName: enrollment.course.courseName, // Assuming courseName is the identifier for the course
+      batchName: enrollment.batch.batchId,
+      courseName: enrollment.course.courseName,
     }));
 
     const json2csvParser = new Parser();
@@ -382,7 +365,6 @@ export const getEnrolledStudents = async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename=students_${batchId}_${courseId}.csv`);
     res.status(200).send(csv);
   } catch (error) {
-    console.error('Error fetching enrolled students:', error);
     res.status(500).json({ message: 'An error occurred while fetching enrolled students.' });
   }
 };
@@ -405,39 +387,101 @@ export const scheduleExam = async (req, res) => {
       duration,
       totalMarks,
       k,
-      solutions: solutions || '', // Optional field, can be empty
-      total_students: 0, // This will be updated later
-      createdBy: req.user._id, // Assuming req.user is set by auth middleware
+      solutions: solutions || '',
+      total_students: 0,
+      createdBy: req.user._id,
     });
 
     await exam.save();
 
     res.status(201).json({ message: 'Exam scheduled successfully.', exam });
   } catch (error) {
-    console.error('Error scheduling exam:', error);
     res.status(500).json({ message: 'An error occurred while scheduling the exam.' });
   }
 };
 
+// export const getExamsForTeacher = async (req, res) => {
+//   try {
+//     const teacherId = req.user._id;
+//     const examss = await Examination.find({ createdBy: teacherId, completed: false })
+//       .populate({
+//       path: 'batch',
+//       select: 'batchId'
+//       })
+//       .lean();
+
+//     const exams = examss.map(exam => ({
+//       ...exam,
+//       batch: exam.batch ? exam.batch.batchId : null
+//     }));
+
+//     res.status(200).json({ exams });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Failed to fetch exams' });
+//   }
+// };
+
 export const getExamsForTeacher = async (req, res) => {
   try {
-    const teacherId = req.user._id; // Assuming req.user contains the authenticated teacher's info
+    const teacherId = req.user._id;
     const examss = await Examination.find({ createdBy: teacherId, completed: false })
       .populate({
-      path: 'batch',
-      select: 'batchId'
+        path: 'batch',
+        select: 'batchId'
       })
       .lean();
 
-    // Map exams to include only batchId in batch field
+    const batchIds = examss.map(exam => exam.batch?._id).filter(Boolean);
+    const examIds = examss.map(exam => exam._id);
+
+    const enrollmentCounts = await Enrollment.aggregate([
+      {
+        $match: {
+          batch: { $in: batchIds },
+          status: 'active'
+        }
+      },
+      {
+        $group: {
+          _id: '$batch',
+          studentCount: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const submissionCounts = await Document.aggregate([
+      {
+        $match: {
+          examId: { $in: examIds }
+        }
+      },
+      {
+        $group: {
+          _id: '$examId',
+          totalSubmissions: { $sum: 1 }
+        }
+      }
+    ]);
+
+    const countMap = new Map();
+    enrollmentCounts.forEach(item => {
+      countMap.set(item._id.toString(), item.studentCount);
+    });
+
+    const submissionMap = new Map();
+    submissionCounts.forEach(item => {
+      submissionMap.set(item._id.toString(), item.totalSubmissions);
+    });
+
     const exams = examss.map(exam => ({
       ...exam,
-      batch: exam.batch ? exam.batch.batchId : null
+      batch: exam.batch ? exam.batch.batchId : null,
+      studentCount: exam.batch ? (countMap.get(exam.batch._id.toString()) || 0) : 0,
+      totalSubmissions: (submissionMap.get(exam._id.toString()) || 0)
     }));
 
     res.status(200).json({ exams });
   } catch (error) {
-    console.error('Error fetching exams:', error);
     res.status(500).json({ message: 'Failed to fetch exams' });
   }
 };
@@ -448,14 +492,12 @@ export const updateExam = async (req, res) => {
     const { name, date, time, number_of_questions, duration, totalMarks, k, total_students } = req.body;
     const solutions = req.file ? req.file.path : null;
 
-    // Find the exam first
     const exam = await Examination.findById(examId);
 
     if (!exam) {
       return res.status(404).json({ message: 'Exam not found' });
     }
 
-    // Update exam details
     exam.name = name || exam.name;
     exam.date = date || exam.date;
     exam.time = time || exam.time;
@@ -465,9 +507,7 @@ export const updateExam = async (req, res) => {
     exam.k = k || exam.k;
     exam.total_students = total_students || exam.total_students;
 
-    // Update solutions file if provided
     if (solutions) {
-      // Delete old solutions file if it exists
       if (exam.solutions && typeof exam.solutions === 'string' && exam.solutions.trim() !== '') {
         fs.unlink(exam.solutions, (err) => {
           if (err && err.code !== 'ENOENT') {
@@ -482,7 +522,6 @@ export const updateExam = async (req, res) => {
 
     res.status(200).json({ message: 'Exam updated successfully', exam });
   } catch (error) {
-    console.error('Error updating exam:', error);
     res.status(500).json({ message: 'Failed to update exam' });
   }
 };
@@ -520,15 +559,12 @@ export const deleteExam = async (req, res) => {
   try {
     const examId = req.params.id;
 
-    // Find the exam first
     const exam = await Examination.findById(examId);
 
     if (!exam) {
       return res.status(404).json({ message: 'Exam not found' });
     }
     
-
-    // Delete the associated file if it exists
     if (exam.solutions && typeof exam.solutions === 'string' && exam.solutions.trim() !== '') {
       fs.unlink(exam.solutions, (err) => {
         if (err && err.code !== 'ENOENT') {
@@ -537,7 +573,6 @@ export const deleteExam = async (req, res) => {
       });
     }
 
-    // Delete associated uploaded documents
     const documents = await Document.find({ examId });
     for (const doc of documents) {
       if (doc.documentPath && typeof doc.documentPath === 'string') {
@@ -554,12 +589,10 @@ export const deleteExam = async (req, res) => {
 
     await UIDMap.deleteMany({ examId });
 
-    // Delete the exam document
     await Examination.findByIdAndDelete(examId);
 
     res.status(200).json({ message: 'Exam deleted successfully' });
   } catch (error) {
-    console.error('Error deleting exam:', error);
     res.status(500).json({ message: 'Failed to delete exam' });
   }
 };
@@ -607,11 +640,8 @@ export const downloadPDF = async (req, res) => {
         }
       }
 
-      // Generate QR code
       const qrCodeData = await QRCode.toDataURL(uniqueId);
 
-      // Add a new page to the PDF
-      // doc.addPage();
       doc.image(qrCodeData, { fit: [100, 100], align: 'center' });
       doc.text(`User ID: ${enrollment.student.email}`, { align: 'center' });
       doc.text(`User Name: ${enrollment.student.name}`, { align: 'center' });
@@ -645,7 +675,6 @@ export const bulkUploadDocuments = async (req, res) => {
       if (!uniqueId) continue;
       const isUIDValid = await UIDMap.exists({ uniqueId, examId });
       if (!isUIDValid) {
-        // console.warn(`Unique ID ${uniqueId} not found for exam ${examId}. Skipping file: ${file.originalname}`);
         continue;
       }
       const existingDoc = await Document.findOne({ uniqueId, examId });
@@ -663,7 +692,6 @@ export const bulkUploadDocuments = async (req, res) => {
         await existingDoc.save();
         updated++;
       } else {
-        // Create a new document
         await Document.create({
           uniqueId,
           examId,
@@ -676,7 +704,6 @@ export const bulkUploadDocuments = async (req, res) => {
 
     res.status(200).json({ message: 'Documents processed successfully', added, updated });
   } catch (error) {
-    // console.error('Error during bulk upload:', error);
     res.status(500).json({ message: 'Failed to upload documents' });
   }
 };
@@ -700,8 +727,8 @@ export const sendEvaluation = async (req, res) => {
     const documents = documentsWithoutUserId.map((doc) => {
       const matchingUidMap = uidMaps.find((uidMap) => uidMap.uniqueId === doc.uniqueId);
       return {
-        ...doc.toObject(), // Convert Mongoose document to plain object
-        userId: matchingUidMap ? matchingUidMap.userId : null, // Map userId if found
+        ...doc.toObject(),
+        userId: matchingUidMap ? matchingUidMap.userId : null,
       };
     });
 
@@ -709,19 +736,17 @@ export const sendEvaluation = async (req, res) => {
       return res.status(404).json({ message: 'No documents or students found for this exam.' });
     }
 
-    const studentMap = new Map(); // Map to track evaluations assigned to each student
+    const studentMap = new Map();
 
-    // Initialize studentMap with empty arrays for evaluations
     students.forEach((enrollment) => {
       studentMap.set(enrollment.student._id.toString(), []);
     });
 
-    // Ensure each student evaluates exactly `k` documents
     for (const document of documents) {
       const eligibleEvaluators = students.filter(
         (enrollment) =>
-          document.uniqueId && // Check if document.uniqueId exists
-          document.userId && // Check if document.userId exists
+          document.uniqueId &&
+          document.userId &&
           enrollment.student._id.toString() !== document.userId.toString() &&
           studentMap.get(enrollment.student._id.toString()).length < exam.k
       );
@@ -732,7 +757,6 @@ export const sendEvaluation = async (req, res) => {
         });
       }
 
-      // Randomly assign `k` evaluators to the document
       const assignedEvaluators = eligibleEvaluators
         .sort(() => Math.random() - 0.5)
         .slice(0, exam.k);
@@ -756,12 +780,10 @@ export const sendEvaluation = async (req, res) => {
 
     res.status(200).json({ message: 'Evaluation sent successfully!' });
   } catch (error) {
-    console.error('Error sending evaluations:', error);
     res.status(500).json({ message: 'Failed to send evaluation!' });
   }
 };
 
-// TODO: Test the logic to flag evaluations on large number of evaluations
 export const flagEvaluations = async (req, res) => {
   const { examId } = req.params; 
 
@@ -873,15 +895,11 @@ export const flagEvaluations = async (req, res) => {
         }
       }
     }
-    console.log('All evaluations processed and flagged where necessary and I have updated the database.');
 
     exam.flags = true;
     await exam.save();
-    console.log('Exam marked as flagged successfully.');
-
     res.status(200).json({ message: 'Evaluations flagged successfully!' });
   } catch (error) {
-    console.error('Error flagging evaluations:', error);
     res.status(500).json({ message: 'Failed to flag evaluations!' });
   }
 };
@@ -939,7 +957,6 @@ export const removeTicket = async (req, res) => {
 
     res.status(200).json({ message: 'Ticket removed successfully!' });
   } catch (error) {
-    console.error('Error removing ticket:', error);
     res.status(500).json({ message: 'Failed to remove ticket!' });
   }
 };
@@ -999,7 +1016,6 @@ export const getResultsAnalytics = async (req, res) => {
   try {
     const evaluations = await PeerEvaluation.find({ exam: examId }).populate('student');
 
-    // Leaderboard (top 3)
     const studentTotals = {};
     evaluations.forEach(ev => {
       const studentId = ev.student?._id?.toString();
@@ -1024,7 +1040,6 @@ export const getResultsAnalytics = async (req, res) => {
     const sortedAverages = [...averages].sort((a, b) => b.avg - a.avg);
     const leaderboard = sortedAverages.slice(0, 3);
 
-    // Histogram
     const avgScores = averages.map(a => a.avg);
     const minScore = Math.min(...avgScores, 0);
     const maxScore = Math.max(...avgScores, 0);
@@ -1050,7 +1065,6 @@ export const getResultsAnalytics = async (req, res) => {
       }
     });
 
-    // Question-wise averages
     let maxQuestions = 0;
     evaluations.forEach(ev => {
       if (Array.isArray(ev.score)) maxQuestions = Math.max(maxQuestions, ev.score.length);
@@ -1069,7 +1083,6 @@ export const getResultsAnalytics = async (req, res) => {
       questionCounts[idx] ? sum / questionCounts[idx] : 0
     );
 
-    // Scatter plot: Student averages vs. number of evaluations
     const studentEvalCount = {};
     evaluations.forEach(ev => {
       const sid = ev.student?._id?.toString();
@@ -1087,7 +1100,6 @@ export const getResultsAnalytics = async (req, res) => {
       label: s.name,
     }));
 
-    // Stacked bar: Evaluation status per student
     let completed = 0, pending = 0, flagged = 0;
     evaluations.forEach(ev => {
       if (ev.eval_status === "completed" && ev.ticket === 0) completed += 1;
@@ -1123,49 +1135,6 @@ export const getCompletedExamsForTeacher = async (req, res) => {
     res.status(500).json({ message: 'Failed to get completed exams!' });
   }
 };
-
-// export const downloadIncentivesCSV = async (req, res) => {
-//   const { batchId } = req.params;
-
-//   try {
-//     const incentives = await Incentivization.find({ batch: batchId })
-//       .populate('student', 'name email')
-//       .populate('batch', 'batchId');
-
-//     if (!incentives.length) {
-//       return res.status(404).json({ message: 'No incentive data found for this batch!' });
-//     }
-
-//     const csvData = incentives.map(incentive => ({
-//       Student_Name: incentive.student.name,
-//       Student_Email: incentive.student.email,
-//       Batch_ID: incentive.batch.batchId,
-//       Total_Rewards: incentive.total_rewards,
-//       Exams_Completed: incentive.exam_count,
-//       Total_Evaluations: incentive.total_evaluations,
-//       Correct_Evaluations: incentive.correct_evaluations,
-//       Accuracy_Percentage: incentive.total_evaluations > 0 ? 
-//         ((incentive.correct_evaluations / incentive.total_evaluations) * 100).toFixed(2) : 0,
-//       Last_Updated: incentive.last_updated.toLocaleDateString()
-//     }));
-
-//     const parser = new Parser({ 
-//       fields: [
-//         'Student_Name', 'Student_Email', 'Batch_ID', 'Total_Rewards', 
-//         'Exams_Completed', 'Total_Evaluations', 'Correct_Evaluations', 
-//         'Accuracy_Percentage', 'Last_Updated'
-//       ] 
-//     });
-//     const csv = parser.parse(csvData);
-
-//     res.header('Content-Type', 'text/csv');
-//     res.attachment(`Batch_${batchId}_Incentives.csv`);
-//     return res.send(csv);
-
-//   } catch (error) {
-//     res.status(500).json({ message: 'Failed to generate incentives CSV!' });
-//   }
-// };
 
 export const downloadIncentivesCSV = async (req, res) => {
   const { batchId } = req.params;

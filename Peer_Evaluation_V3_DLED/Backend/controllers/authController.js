@@ -66,35 +66,28 @@ export const sendVerificationCode = async (req, res) => {
       });
     }
 
-    // Validate email format
     const emailIsValid = emailValidator.validate(email);
     if (!emailIsValid) {
       return res.status(400).json({ message: 'Please enter a valid email address.' });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // Validate role
     const validRoles = ['student', 'teacher', 'admin'];
     if (!validRoles.includes(role)) {
       return res.status(400).json({ message: 'Invalid role specified' });
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate 4-digit verification code
     const verificationCode = generateVerificationCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Delete existing verification codes for this email
     await VerificationCode.deleteMany({ email });
 
-    // Store verification code with registration data (NO USER CREATED YET)
     await VerificationCode.create({
       email,
       code: verificationCode,
@@ -107,7 +100,6 @@ export const sendVerificationCode = async (req, res) => {
       expiresAt,
     });
 
-    // Send verification email with enhanced styling
     const verificationHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -147,8 +139,6 @@ export const sendVerificationCode = async (req, res) => {
 
     await sendEmail(email, 'Email Verification Code - Peer Evaluation System', verificationHtml);
 
-    // console.log(`Verification code sent to ${email}: ${verificationCode}`);
-
     res.status(200).json({
       message: 'Verification code sent to your email. Please check your inbox.',
       email: email,
@@ -156,7 +146,6 @@ export const sendVerificationCode = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error sending verification code:', error);
     res.status(500).json({
       message: 'Failed to send verification code',
       error: error.message
@@ -168,12 +157,10 @@ export const verifyEmail = async (req, res) => {
   try {
     const { email, code } = req.body;
 
-    // Validate input
     if (!email || !code) {
       return res.status(400).json({ message: 'Email and verification code are required!' });
     }
 
-    // Find verification code with registration data
     const verificationRecord = await VerificationCode.findOne({ 
       email, 
       code 
@@ -183,9 +170,7 @@ export const verifyEmail = async (req, res) => {
       return res.status(400).json({ message: 'Invalid verification code' });
     }
 
-    // Check if code has expired
     if (verificationRecord.expiresAt < new Date()) {
-      // Clean up expired records
       await VerificationCode.deleteMany({ email });
       
       return res.status(400).json({ 
@@ -194,32 +179,26 @@ export const verifyEmail = async (req, res) => {
       });
     }
 
-    // NOW CREATE THE USER (only after successful verification)
     const { registrationData } = verificationRecord;
     
-    // Double-check user doesn't exist (race condition protection)
     const existingUser = await User.findOne({ email: registrationData.email });
     if (existingUser) {
       await VerificationCode.deleteOne({ _id: verificationRecord._id });
       return res.status(400).json({ message: 'User already exists with this email' });
     }
 
-    // Create the user
     const user = await User.create({
       name: registrationData.name,
       email: registrationData.email,
-      password: registrationData.password, // Already hashed
+      password: registrationData.password,
       role: registrationData.role,
-      isVerified: true, // Mark as verified since they completed email verification
+      isVerified: true,
     });
 
-    // Clean up verification code
     await VerificationCode.deleteOne({ _id: verificationRecord._id });
 
-    // Generate JWT token with user ID and role
     const token = generateToken(user._id, user.role);
 
-    // Send welcome email
     const welcomeHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
         <div style="background-color: #ffffff; padding: 30px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
@@ -264,8 +243,6 @@ export const verifyEmail = async (req, res) => {
       console.log('Welcome email failed to send:', emailError.message);
     }
 
-    // console.log(`User ${email} created and verified successfully`);
-
     res.status(201).json({
       message: 'Email verified successfully! Registration completed.',
       _id: user._id,
@@ -283,7 +260,6 @@ export const verifyEmail = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error verifying email:', error);
     res.status(500).json({
       message: 'Email verification failed',
       error: error.message
@@ -299,7 +275,6 @@ export const resendVerificationCode = async (req, res) => {
       return res.status(400).json({ message: 'Email is required' });
     }
 
-    // Check if user already exists
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(400).json({ 
@@ -308,7 +283,6 @@ export const resendVerificationCode = async (req, res) => {
       });
     }
 
-    // Find existing verification record
     const existingVerification = await VerificationCode.findOne({ email });
     if (!existingVerification) {
       return res.status(400).json({ 
@@ -317,16 +291,13 @@ export const resendVerificationCode = async (req, res) => {
       });
     }
 
-    // Generate new verification code
     const verificationCode = generateVerificationCode();
-    const expiresAt = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
+    const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Update the existing verification record
     existingVerification.code = verificationCode;
     existingVerification.expiresAt = expiresAt;
     await existingVerification.save();
 
-    // Send verification email
     const { registrationData } = existingVerification;
     const verificationHtml = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -374,7 +345,6 @@ export const resendVerificationCode = async (req, res) => {
     });
 
   } catch (error) {
-    console.error('Error resending verification code:', error);
     res.status(500).json({
       message: 'Failed to resend verification code',
       error: error.message
@@ -432,7 +402,6 @@ export const registerUser = async (req, res) => {
       token: generateToken(user._id, user.role),
     });
   } catch (error) {
-    console.error('Registration error:', error.message);
     res.status(500).json({ message: error.message });
   }
 };
@@ -509,30 +478,6 @@ export const loginUser = async (req, res) => {
   }
 };
 
-// export const loginUser = async (req, res) => {
-//   const { email, password } = req.body;
-
-//   try {
-//     const user = await User.findOne({ email });
-//     if (!user) return res.status(400).json({ message: 'User not found.' });
-
-//     const isMatch = await bcrypt.compare(password, user.password);
-//     if (!isMatch) return res.status(400).json({ message: 'Invalid credentials!' });
-
-//     res.status(200).json({
-//       _id: user._id,
-//       name: user.name,
-//       email: user.email,
-//       role: user.role,
-//       token: generateToken(user._id, user.role)
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: error.message });
-//   }
-// };
-
-// Protected Profile
-
 export const getProfile = async (req, res) => {
   if (!req.user) return res.status(404).json({ message: 'User not found' });
 
@@ -554,7 +499,7 @@ export const forgotPassword = async (req, res) => {
 
     const token = crypto.randomBytes(32).toString('hex');
     user.resetToken = token;
-    user.tokenExpiry = Date.now() + 3600000; // 1 hour
+    user.tokenExpiry = Date.now() + 3600000;
     await user.save();
 
     // const resetLink = `http://localhost:3000/reset-password/${token}`;
@@ -650,9 +595,6 @@ export const forgotPassword = async (req, res) => {
         pass: process.env.EMAIL_PASS,
       },
     });
-    // console.log("EMAIL_USER:", process.env.EMAIL_USER);
-    // console.log("EMAIL_PASS:", process.env.EMAIL_PASS ? 'Loaded' : 'Missing');
-
 
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
@@ -663,7 +605,6 @@ export const forgotPassword = async (req, res) => {
 
     res.status(200).json({ message: 'Reset link sent to your email.' });
   } catch (err) {
-    console.error(err);
     res.status(500).json({ message: 'Server error' });
   }
 };
@@ -700,15 +641,15 @@ export const changePassword = async (req, res) => {
 
   try {
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: 'User not found!' });
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Current password is incorrect' });
+    if (!isMatch) return res.status(400).json({ message: 'Current password is incorrect!' });
 
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
-    res.status(200).json({ message: 'Password changed successfullyPassword changed successfully! Logging out...' });
+    res.status(200).json({ message: 'Password changed successfully! Logging out...' });
   } catch (error) {
     res.status(500).json({ message: 'Server error' });
   }

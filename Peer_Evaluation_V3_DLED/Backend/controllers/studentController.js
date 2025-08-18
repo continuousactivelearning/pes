@@ -11,7 +11,6 @@ import { Ticket } from '../models/Ticket.js';
 import fs from 'fs';
 
 export const getStudentDashboardStats = async (req, res) => {
-//   console.log('Fetching student dashboard stats for user:', req.user._id);
   try {
     const studentId = req.user._id;
 
@@ -30,7 +29,6 @@ export const getStudentDashboardStats = async (req, res) => {
     const tomorrow = new Date(today);
     tomorrow.setDate(today.getDate() + 1);
 
-    // Get all not-completed exams for today
     const todaysExams = await Examination.find({
       completed: false,
       date: { $gte: today, $lt: tomorrow }
@@ -40,7 +38,6 @@ export const getStudentDashboardStats = async (req, res) => {
     const now = new Date();
 
     todaysExams.forEach(exam => {
-      // exam.time is "HH:MM"
       const [startHour, startMinute] = exam.time.split(':').map(Number);
       const examStart = new Date(exam.date);
       examStart.setHours(startHour, startMinute, 0, 0);
@@ -58,7 +55,6 @@ export const getStudentDashboardStats = async (req, res) => {
       activeExams
     });
   } catch (error) {
-    console.error('Error fetching student dashboard stats:', error);
     res.status(500).json({ message: 'Failed to fetch dashboard stats' });
   }
 };
@@ -77,7 +73,6 @@ export const getEnrolledCourses = async (req, res) => {
         select: 'batchId'
       });
 
-    // Format the response
     const result = enrollments.map(enrollment => ({
       courseName: enrollment.course?.courseName || 'Unknown Course',
       batchName: enrollment.batch?.batchId || 'Unknown Batch'
@@ -85,7 +80,6 @@ export const getEnrolledCourses = async (req, res) => {
 
     res.json(result);
   } catch (error) {
-    console.error('Error fetching enrolled courses:', error);
     res.status(500).json({ message: 'Failed to fetch enrolled courses' });
   }
 };
@@ -95,7 +89,6 @@ export const getAvailableCourses = async (req, res) => {
     const courses = await Course.find({});
     res.json(courses);
   } catch (error) {
-    console.error('Error fetching available courses:', error);
     res.status(500).json({ message: 'Failed to fetch available courses' });
   }
 };
@@ -106,7 +99,6 @@ export const getBatchesForCourse = async (req, res) => {
     const batches = await Batch.find({ course: courseId });
     res.json(batches);
   } catch (error) {
-    console.error('Error fetching batches for course:', error);
     res.status(500).json({ message: 'Failed to fetch batches for course' });
   }
 };
@@ -152,7 +144,6 @@ export const requestEnrollment = async (req, res) => {
     await newEnrollment.save();
     res.status(200).json({ message: 'Enrollment request submitted successfully!' });
   } catch (error) {
-    console.error('Error requesting enrollment:', error);
     res.status(500).json({ message: 'Failed to request enrollment!' });
   }
 };
@@ -264,13 +255,8 @@ export const uploadExamDocument = async (req, res) => {
     const file = req.file;
     if (!file) return res.status(400).json({ message: 'No file found for Upload!' });
 
-    // Find the uniqueId from UIDMap
     let uidMap = await UIDMap.findOne({ userId: studentId, examId });
     if (!uidMap) {
-      // const uniqueId = await extractUserIdFromQR(file.path);
-      // if (!uniqueId) {
-      //   uniqueId = studentId;
-      // }
       uidMap = await UIDMap.create({ uniqueId: studentId, userId: studentId, examId });
     }
 
@@ -316,7 +302,6 @@ export const uploadExamDocument = async (req, res) => {
         uploadedBy: studentId,
         uploadedOn: new Date(),
       });
-      // await newDoc.save();
     }
     res.status(200).json({ message: 'File uploaded successfully!' });
   } catch (err) {
@@ -341,8 +326,8 @@ export const getEvaluationsByBatchAndExam = async (req, res) => {
       .populate({
         path: 'exam',
         match: { flags: false }
-      })//, 'name date time duration totalMarks batch') // Include batch in exam population
-      .populate('document')//, 'uniqueId documentPath uploadedOn');
+      })
+      .populate('document')
     
     const batchCourseMap = {};
 

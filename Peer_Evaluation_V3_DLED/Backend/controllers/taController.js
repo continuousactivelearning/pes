@@ -37,7 +37,6 @@ export const getMyTABatches = async (req, res) => {
       })
     );
 
-    // Filter out any nulls (in case of missing batch/course/instructor)
     const filteredResults = results.filter(Boolean);
 
     if (!filteredResults.length) {
@@ -55,8 +54,6 @@ export const getPendingEnrollments = async (req, res) => {
     const { batchId } = req.params;
     const enrollments = await Enrollment.find({ batch: batchId, status: "pending" })
       .populate("student", "name email");
-
-    // console.log("Pending enrollments for batch:", batchId, "->", enrollments);
 
     if (!enrollments.length) {
       return res.status(404).json({ message: 'No pending enrollments found!' });

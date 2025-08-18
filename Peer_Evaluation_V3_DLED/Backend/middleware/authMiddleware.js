@@ -1,4 +1,3 @@
-// middleware/authMiddleware.js
 import jwt from 'jsonwebtoken';
 import { User } from '../models/User.js';
 
@@ -20,7 +19,6 @@ export const protect = async (req, res, next) => {
   }
 };
 
-// Added middleware to allow both admin and teacher roles to access the route.
 export const adminOrTeacherOnly = (req, res, next) => {
   if (req.user.role === 'admin' || req.user.role === 'teacher') {
     return next();
