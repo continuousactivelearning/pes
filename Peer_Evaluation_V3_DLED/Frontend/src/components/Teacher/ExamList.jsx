@@ -18,6 +18,7 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
               <th style={{ padding: '12px', textAlign: 'center' }}>Total Marks</th>
               <th style={{ padding: '12px', textAlign: 'center' }}>K</th>
               <th style={{ padding: '12px', textAlign: 'center' }}>Total Students</th>
+              <th style={{ padding: '12px', textAlign: 'center' }}>Total Attendees</th>
               <th style={{ padding: '12px', textAlign: 'center' }}>Total Submissions</th>
               <th style={{ padding: '12px', textAlign: 'center' }}>Solutions</th>
               <th style={{ padding: '12px', textAlign: 'center' }}>Actions</th>
@@ -48,6 +49,7 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                     <td style={{ padding: '12px', color: '#3f3d56' }}>{exam.totalMarks}</td>
                     <td style={{ padding: '12px', color: '#3f3d56' }}>{exam.k}</td>
                     <td style={{ padding: '12px', color: '#3f3d56' }}>{exam.studentCount}</td>
+                    <td style={{ padding: '12px', color: '#3f3d56' }}>{exam.total_students}</td>
                     <td style={{ padding: '12px', color: '#3f3d56' }}>{exam.totalSubmissions}</td>
                     <td style={{ padding: '12px', textAlign: 'center' }}>
                       {typeof exam.solutions === 'string' && exam.solutions.trim() !== '' ? (
