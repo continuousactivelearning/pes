@@ -1,9 +1,9 @@
-import multer from 'multer';
-import path from 'path';
+import multer from "multer";
+import path from "path";
 
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, 'uploads/'); // Ensure this folder exists
+    cb(null, "uploads/");
   },
   filename: function (req, file, cb) {
     const ext = path.extname(file.originalname);
@@ -15,5 +15,4 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage });
 
-// Middleware to handle file uploads
 export default upload;

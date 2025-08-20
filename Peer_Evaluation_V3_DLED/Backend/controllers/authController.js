@@ -1,17 +1,17 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
-import nodemailer from 'nodemailer';
-import crypto from 'crypto';
-import { User } from '../models/User.js';
-import sendEmail from '../utils/sendEmail.js';
-import { Course } from '../models/Course.js';
-import emailValidator from 'email-validator';
-import { Batch } from '../models/Batch.js';
-import { VerificationCode } from '../models/VerificationCode.js';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
+import { User } from "../models/User.js";
+import sendEmail from "../utils/sendEmail.js";
+import { Course } from "../models/Course.js";
+import emailValidator from "email-validator";
+import { Batch } from "../models/Batch.js";
+import { VerificationCode } from "../models/VerificationCode.js";
 
 const generateToken = (id, role) => {
-  return jwt.sign({ id, role }, process.env.JWT_SECRET || 'default_secret', {
-    expiresIn: '30d'
+  return jwt.sign({ id, role }, process.env.JWT_SECRET || "default_secret", {
+    expiresIn: "30d",
   });
 };
 
@@ -27,26 +27,26 @@ const validatePassword = (password) => {
   const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
 
   const errors = [];
-  
+
   if (password.length < minLength) {
     errors.push(`Password must be at least ${minLength} characters long`);
   }
   if (!hasUppercase) {
-    errors.push('Password must contain at least one uppercase letter');
+    errors.push("Password must contain at least one uppercase letter");
   }
   if (!hasLowercase) {
-    errors.push('Password must contain at least one lowercase letter');
+    errors.push("Password must contain at least one lowercase letter");
   }
   if (!hasNumber) {
-    errors.push('Password must contain at least one number');
+    errors.push("Password must contain at least one number");
   }
   if (!hasSpecialChar) {
-    errors.push('Password must contain at least one special character');
+    errors.push("Password must contain at least one special character");
   }
 
   return {
     isValid: errors.length === 0,
-    errors
+    errors,
   };
 };
 
@@ -55,30 +55,34 @@ export const sendVerificationCode = async (req, res) => {
     const { name, email, password, role } = req.body;
 
     if (!name || !email || !password || !role) {
-      return res.status(400).json({ message: 'All fields are required' });
+      return res.status(400).json({ message: "All fields are required" });
     }
 
     const passwordValidation = validatePassword(password);
     if (!passwordValidation.isValid) {
       return res.status(400).json({
-        message: 'Password does not meet requirements!',
-        errors: passwordValidation.errors
+        message: "Password does not meet requirements!",
+        errors: passwordValidation.errors,
       });
     }
 
     const emailIsValid = emailValidator.validate(email);
     if (!emailIsValid) {
-      return res.status(400).json({ message: 'Please enter a valid email address.' });
+      return res
+        .status(400)
+        .json({ message: "Please enter a valid email address." });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ message: 'User already exists with this email' });
+      return res
+        .status(400)
+        .json({ message: "User already exists with this email" });
     }
 
-    const validRoles = ['student', 'teacher', 'admin'];
+    const validRoles = ["student", "teacher", "admin"];
     if (!validRoles.includes(role)) {
-      return res.status(400).json({ message: 'Invalid role specified' });
+      return res.status(400).json({ message: "Invalid role specified" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -137,18 +141,21 @@ export const sendVerificationCode = async (req, res) => {
       </div>
     `;
 
-    await sendEmail(email, 'Email Verification Code - Peer Evaluation System', verificationHtml);
+    await sendEmail(
+      email,
+      "Email Verification Code - Peer Evaluation System",
+      verificationHtml
+    );
 
     res.status(200).json({
-      message: 'Verification code sent to your email. Please check your inbox.',
+      message: "Verification code sent to your email. Please check your inbox.",
       email: email,
-      requiresVerification: true
+      requiresVerification: true,
     });
-
   } catch (error) {
     res.status(500).json({
-      message: 'Failed to send verification code',
-      error: error.message
+      message: "Failed to send verification code",
+      error: error.message,
     });
   }
 };
@@ -158,33 +165,38 @@ export const verifyEmail = async (req, res) => {
     const { email, code } = req.body;
 
     if (!email || !code) {
-      return res.status(400).json({ message: 'Email and verification code are required!' });
+      return res
+        .status(400)
+        .json({ message: "Email and verification code are required!" });
     }
 
-    const verificationRecord = await VerificationCode.findOne({ 
-      email, 
-      code 
+    const verificationRecord = await VerificationCode.findOne({
+      email,
+      code,
     });
 
     if (!verificationRecord) {
-      return res.status(400).json({ message: 'Invalid verification code' });
+      return res.status(400).json({ message: "Invalid verification code" });
     }
 
     if (verificationRecord.expiresAt < new Date()) {
       await VerificationCode.deleteMany({ email });
-      
-      return res.status(400).json({ 
-        message: 'Verification code has expired. Please start registration again.',
-        redirectToRegister: true 
+
+      return res.status(400).json({
+        message:
+          "Verification code has expired. Please start registration again.",
+        redirectToRegister: true,
       });
     }
 
     const { registrationData } = verificationRecord;
-    
+
     const existingUser = await User.findOne({ email: registrationData.email });
     if (existingUser) {
       await VerificationCode.deleteOne({ _id: verificationRecord._id });
-      return res.status(400).json({ message: 'User already exists with this email' });
+      return res
+        .status(400)
+        .json({ message: "User already exists with this email" });
     }
 
     const user = await User.create({
@@ -217,7 +229,9 @@ export const verifyEmail = async (req, res) => {
             <ul style="color: #555; line-height: 1.8; margin: 0; padding-left: 20px;">
               <li><strong>Name:</strong> ${user.name}</li>
               <li><strong>Email:</strong> ${user.email}</li>
-              <li><strong>Role:</strong> ${user.role.charAt(0).toUpperCase() + user.role.slice(1)}</li>
+              <li><strong>Role:</strong> ${
+                user.role.charAt(0).toUpperCase() + user.role.slice(1)
+              }</li>
             </ul>
           </div>
 
@@ -238,13 +252,17 @@ export const verifyEmail = async (req, res) => {
     `;
 
     try {
-      await sendEmail(user.email, 'Welcome to Peer Evaluation System! 🎉', welcomeHtml);
+      await sendEmail(
+        user.email,
+        "Welcome to Peer Evaluation System! 🎉",
+        welcomeHtml
+      );
     } catch (emailError) {
-      console.log('Welcome email failed to send:', emailError.message);
+      console.log("Welcome email failed to send:", emailError.message);
     }
 
     res.status(201).json({
-      message: 'Email verified successfully! Registration completed.',
+      message: "Email verified successfully! Registration completed.",
       _id: user._id,
       name: user.name,
       email: user.email,
@@ -256,13 +274,12 @@ export const verifyEmail = async (req, res) => {
         email: user.email,
         role: user.role,
         isVerified: user.isVerified,
-      }
+      },
     });
-
   } catch (error) {
     res.status(500).json({
-      message: 'Email verification failed',
-      error: error.message
+      message: "Email verification failed",
+      error: error.message,
     });
   }
 };
@@ -272,22 +289,23 @@ export const resendVerificationCode = async (req, res) => {
     const { email } = req.body;
 
     if (!email) {
-      return res.status(400).json({ message: 'Email is required' });
+      return res.status(400).json({ message: "Email is required" });
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(400).json({ 
-        message: 'User already exists with this email. Please login instead.',
-        redirectToLogin: true 
+      return res.status(400).json({
+        message: "User already exists with this email. Please login instead.",
+        redirectToLogin: true,
       });
     }
 
     const existingVerification = await VerificationCode.findOne({ email });
     if (!existingVerification) {
-      return res.status(400).json({ 
-        message: 'No pending registration found for this email. Please start registration again.',
-        redirectToRegister: true 
+      return res.status(400).json({
+        message:
+          "No pending registration found for this email. Please start registration again.",
+        redirectToRegister: true,
       });
     }
 
@@ -336,18 +354,21 @@ export const resendVerificationCode = async (req, res) => {
       </div>
     `;
 
-    await sendEmail(email, 'New Verification Code - Peer Evaluation System', verificationHtml);
+    await sendEmail(
+      email,
+      "New Verification Code - Peer Evaluation System",
+      verificationHtml
+    );
 
     console.log(`New verification code sent to ${email}: ${verificationCode}`);
 
     res.status(200).json({
-      message: 'New verification code sent to your email'
+      message: "New verification code sent to your email",
     });
-
   } catch (error) {
     res.status(500).json({
-      message: 'Failed to resend verification code',
-      error: error.message
+      message: "Failed to resend verification code",
+      error: error.message,
     });
   }
 };
@@ -358,12 +379,14 @@ export const registerUser = async (req, res) => {
   try {
     const userExists = await User.findOne({ email });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists.' });
+      return res.status(400).json({ message: "User already exists." });
     }
 
     const emailIsValid = emailValidator.validate(email);
     if (!emailIsValid) {
-      return res.status(400).json({ message: 'Email address does not exist or is invalid.' });
+      return res
+        .status(400)
+        .json({ message: "Email address does not exist or is invalid." });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -392,7 +415,11 @@ export const registerUser = async (req, res) => {
       </div>
     `;
 
-    await sendEmail(user.email, 'Welcome to Peer Evaluation System', welcomeHtml);
+    await sendEmail(
+      user.email,
+      "Welcome to Peer Evaluation System",
+      welcomeHtml
+    );
 
     res.status(201).json({
       _id: user._id,
@@ -411,17 +438,17 @@ export const loginUser = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    
+
     if (!user) {
       const pendingRegistration = await VerificationCode.findOne({ email });
       if (pendingRegistration) {
-        return res.status(400).json({ 
-          message: 'Please complete your registration by verifying your email.',
+        return res.status(400).json({
+          message: "Please complete your registration by verifying your email.",
           requiresVerification: true,
-          email: email
+          email: email,
         });
       }
-      return res.status(400).json({ message: 'User not found.' });
+      return res.status(400).json({ message: "User not found." });
     }
 
     if (!user.isVerified) {
@@ -454,24 +481,26 @@ export const loginUser = async (req, res) => {
         </div>
       `;
 
-      await sendEmail(email, 'Email Verification Required', verificationHtml);
+      await sendEmail(email, "Email Verification Required", verificationHtml);
 
-      return res.status(400).json({ 
-        message: 'Please verify your email. We\'ve sent a verification code to your email.',
+      return res.status(400).json({
+        message:
+          "Please verify your email. We've sent a verification code to your email.",
         requiresVerification: true,
-        email: email
+        email: email,
       });
     }
 
     const isMatch = await bcrypt.compare(password, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Invalid credentials!' });
+    if (!isMatch)
+      return res.status(400).json({ message: "Invalid credentials!" });
 
     res.status(200).json({
       _id: user._id,
       name: user.name,
       email: user.email,
       role: user.role,
-      token: generateToken(user._id, user.role)
+      token: generateToken(user._id, user.role),
     });
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -479,14 +508,14 @@ export const loginUser = async (req, res) => {
 };
 
 export const getProfile = async (req, res) => {
-  if (!req.user) return res.status(404).json({ message: 'User not found' });
+  if (!req.user) return res.status(404).json({ message: "User not found" });
 
   res.status(200).json({
     _id: req.user._id,
     name: req.user.name,
     email: req.user.email,
     role: req.user.role,
-    isTA: req.user.isTA
+    isTA: req.user.isTA,
   });
 };
 
@@ -495,15 +524,15 @@ export const forgotPassword = async (req, res) => {
 
   try {
     const user = await User.findOne({ email });
-    if (!user) return res.status(404).json({ message: 'User not found' });
+    if (!user) return res.status(404).json({ message: "User not found" });
 
-    const token = crypto.randomBytes(32).toString('hex');
+    const token = crypto.randomBytes(32).toString("hex");
     user.resetToken = token;
     user.tokenExpiry = Date.now() + 3600000;
     await user.save();
 
     // const resetLink = `http://localhost:3000/reset-password/${token}`;
-    const CLIENT_URL = process.env.CLIENT_URL || 'http://localhost:5000';
+    const CLIENT_URL = process.env.CLIENT_URL || "http://localhost:5000";
     const resetLink = `${CLIENT_URL}/reset-password/${token}`;
     const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; background-color: #f9f9f9;">
@@ -517,7 +546,9 @@ export const forgotPassword = async (req, res) => {
           
           <!-- Main Content -->
           <div style="background-color: #f8f9fa; padding: 20px; border-radius: 8px; margin: 20px 0;">
-            <h2 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">Hi ${user.name || 'User'},</h2>
+            <h2 style="color: #333; margin: 0 0 15px 0; font-size: 20px;">Hi ${
+              user.name || "User"
+            },</h2>
             <p style="color: #555; line-height: 1.6; margin: 0 0 15px 0;">
               We received a request to reset your password for your Peer Evaluation System account. 
               Click the button below to create a new password.
@@ -589,7 +620,7 @@ export const forgotPassword = async (req, res) => {
       </div>
     `;
     const transporter = nodemailer.createTransport({
-      service: 'Gmail',
+      service: "Gmail",
       auth: {
         user: process.env.EMAIL_USER,
         pass: process.env.EMAIL_PASS,
@@ -599,13 +630,13 @@ export const forgotPassword = async (req, res) => {
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: user.email,
-      subject: 'Password Reset for Peer Evaluation System',
-      html
+      subject: "Password Reset for Peer Evaluation System",
+      html,
     });
 
-    res.status(200).json({ message: 'Reset link sent to your email.' });
+    res.status(200).json({ message: "Reset link sent to your email." });
   } catch (err) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
 
@@ -616,11 +647,11 @@ export const resetPassword = async (req, res) => {
   try {
     const user = await User.findOne({
       resetToken: token,
-      tokenExpiry: { $gt: Date.now() }
+      tokenExpiry: { $gt: Date.now() },
     });
 
     if (!user) {
-      return res.status(400).json({ message: 'Invalid or expired token!' });
+      return res.status(400).json({ message: "Invalid or expired token!" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
@@ -630,9 +661,9 @@ export const resetPassword = async (req, res) => {
 
     await user.save();
 
-    res.status(200).json({ message: 'Password has been reset successfully!' });
+    res.status(200).json({ message: "Password has been reset successfully!" });
   } catch (err) {
-    res.status(500).json({ message: 'Server error!' });
+    res.status(500).json({ message: "Server error!" });
   }
 };
 
@@ -641,17 +672,21 @@ export const changePassword = async (req, res) => {
 
   try {
     const user = await User.findById(req.user._id);
-    if (!user) return res.status(404).json({ message: 'User not found!' });
+    if (!user) return res.status(404).json({ message: "User not found!" });
 
     const isMatch = await bcrypt.compare(currentPassword, user.password);
-    if (!isMatch) return res.status(400).json({ message: 'Current password is incorrect!' });
+    if (!isMatch)
+      return res
+        .status(400)
+        .json({ message: "Current password is incorrect!" });
 
     user.password = await bcrypt.hash(newPassword, 10);
     await user.save();
 
-    res.status(200).json({ message: 'Password changed successfully! Logging out...' });
+    res
+      .status(200)
+      .json({ message: "Password changed successfully! Logging out..." });
   } catch (error) {
-    res.status(500).json({ message: 'Server error' });
+    res.status(500).json({ message: "Server error" });
   }
 };
-

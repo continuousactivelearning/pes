@@ -1,11 +1,11 @@
-import poppler from 'pdf-poppler';
-import { fileURLToPath } from 'url';
-import path from 'path';
-import fs from 'fs';
-import { createRequire } from 'module';
+import poppler from "pdf-poppler";
+import { fileURLToPath } from "url";
+import path from "path";
+import fs from "fs";
+import { createRequire } from "module";
 const require = createRequire(import.meta.url);
-const Jimp = require('jimp');
-const QrCode = require('qrcode-reader');
+const Jimp = require("jimp");
+const QrCode = require("qrcode-reader");
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -17,20 +17,20 @@ const __dirname = path.dirname(__filename);
  */
 const extractUserIdFromQR = async (filePath) => {
   try {
-    const outputDir = path.join(__dirname, 'temp');
+    const outputDir = path.join(__dirname, "temp");
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir);
     }
 
     const options = {
-      format: 'jpeg',
+      format: "jpeg",
       out_dir: outputDir,
-      out_prefix: 'page',
+      out_prefix: "page",
       page: 1,
     };
 
     await poppler.convert(filePath, options);
-    const imagePath = path.join(outputDir, 'page-1.jpg');
+    const imagePath = path.join(outputDir, "page-1.jpg");
 
     const image = await Jimp.read(imagePath);
 
@@ -42,17 +42,17 @@ const extractUserIdFromQR = async (filePath) => {
     );
     croppedImage.greyscale().contrast(1).resize(500, 500);
 
-    const processedImagePath = path.join(outputDir, 'processed-page-1.jpg');
+    const processedImagePath = path.join(outputDir, "processed-page-1.jpg");
     await croppedImage.writeAsync(processedImagePath);
 
     const processedJimpImage = await Jimp.read(processedImagePath);
-    
+
     return new Promise((resolve, reject) => {
       const qr = new QrCode();
       qr.callback = function (err, value) {
         if (err || !value) {
-          console.error('Failed to decode QR code:', err);
-          reject(new Error('Failed to read QR code'));
+          console.error("Failed to decode QR code:", err);
+          reject(new Error("Failed to read QR code"));
         } else {
           // console.log('QR code decoded successfully:', value.result);
           resolve(value.result);
@@ -61,11 +61,11 @@ const extractUserIdFromQR = async (filePath) => {
       qr.decode(processedJimpImage.bitmap);
     });
   } catch (error) {
-    console.error('Error extracting unique ID from QR:', error);
-    throw new Error('Failed to extract unique ID from QR code');
+    console.error("Error extracting unique ID from QR:", error);
+    throw new Error("Failed to extract unique ID from QR code");
   } finally {
     // Clean up temporary files
-    const tempDir = path.join(__dirname, 'temp');
+    const tempDir = path.join(__dirname, "temp");
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true });
     }

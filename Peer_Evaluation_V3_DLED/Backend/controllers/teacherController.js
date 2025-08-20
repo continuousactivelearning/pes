@@ -49,14 +49,12 @@ export const getDashboardStats = async (req, res) => {
       completed: false,
     });
 
-    res
-      .status(200)
-      .json({
-        courses: courseIds.length,
-        batches: batches.length,
-        enrolledStudents: enrolledStudents,
-        activeExams: activeExams,
-      });
+    res.status(200).json({
+      courses: courseIds.length,
+      batches: batches.length,
+      enrolledStudents: enrolledStudents,
+      activeExams: activeExams,
+    });
   } catch (error) {
     res.status(500).json({ message: "Failed to fetch dashboard statistics!" });
   }
@@ -89,22 +87,17 @@ export const assignTA = async (req, res) => {
       batch: batch._id,
     });
     if (isEnrolled) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "Student is enrolled in this batch and cannot be assigned as TA.",
-        });
+      return res.status(400).json({
+        message:
+          "Student is enrolled in this batch and cannot be assigned as TA.",
+      });
     }
 
     const isAlreadyTA = await TA.exists({ userId: user._id, batch: batch._id });
     if (isAlreadyTA) {
-      return res
-        .status(409)
-        .json({
-          message:
-            "This user is already assigned as TA for the selected batch.",
-        });
+      return res.status(409).json({
+        message: "This user is already assigned as TA for the selected batch.",
+      });
     }
 
     user.isTA = true;
@@ -270,22 +263,18 @@ export const studentsEnroll = async (req, res) => {
       .on("end", async () => {
         for (const student of students) {
           if (!student.name || !student.email) {
-            return res
-              .status(400)
-              .json({
-                message: `Missing name or email for one of the student.`,
-              });
+            return res.status(400).json({
+              message: `Missing name or email for one of the student.`,
+            });
           }
 
           const emailIsValid = emailValidator.validate(student.email);
 
           if (!emailIsValid) {
-            return res
-              .status(400)
-              .json({
-                message:
-                  "Email address does not exist or is invalid for one of the student.",
-              });
+            return res.status(400).json({
+              message:
+                "Email address does not exist or is invalid for one of the student.",
+            });
           }
 
           let user = await User.findOne({ email: student.email });
@@ -404,12 +393,10 @@ export const studentsEnroll = async (req, res) => {
           }
         });
 
-        res
-          .status(200)
-          .json({
-            message: "Students enrolled successfully",
-            statistics: { enrolled, pending_enrollment, new_enrollment },
-          });
+        res.status(200).json({
+          message: "Students enrolled successfully",
+          statistics: { enrolled, pending_enrollment, new_enrollment },
+        });
       });
   } catch (error) {
     res
@@ -438,11 +425,9 @@ export const getEnrolledStudents = async (req, res) => {
       .populate("batch");
 
     if (!enrollments || enrollments.length === 0) {
-      return res
-        .status(404)
-        .json({
-          message: "No students found for the specified batch and course.",
-        });
+      return res.status(404).json({
+        message: "No students found for the specified batch and course.",
+      });
     }
 
     const students = enrollments.map((enrollment) => ({
@@ -670,19 +655,15 @@ export const completeExam = async (req, res) => {
     );
 
     if (incentiveResult.success) {
-      res
-        .status(200)
-        .json({
-          message:
-            "Exam marked as completed successfully and incentives updated!",
-        });
+      res.status(200).json({
+        message:
+          "Exam marked as completed successfully and incentives updated!",
+      });
     } else {
-      res
-        .status(200)
-        .json({
-          message:
-            "Exam marked as completed successfully, but failed to update incentives.",
-        });
+      res.status(200).json({
+        message:
+          "Exam marked as completed successfully, but failed to update incentives.",
+      });
     }
   } catch (error) {
     res.status(500).json({ message: "Failed to mark exam as completed!" });
@@ -868,11 +849,9 @@ export const sendEvaluation = async (req, res) => {
 
   const totalDocuments = await Document.countDocuments({ examId });
   if (exam.total_students !== totalDocuments) {
-    return res
-      .status(400)
-      .json({
-        message: `Total students (${exam.total_students}) do not match total submissions (${totalDocuments}) for this exam.`,
-      });
+    return res.status(400).json({
+      message: `Total students (${exam.total_students}) do not match total submissions (${totalDocuments}) for this exam.`,
+    });
   }
 
   const exam = await Examination.findById(examId);

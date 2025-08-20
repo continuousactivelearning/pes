@@ -122,12 +122,10 @@ export const requestEnrollment = async (req, res) => {
     });
 
     if (existingTA) {
-      return res
-        .status(400)
-        .json({
-          message:
-            "You are already a TA for this batch and cannot enroll as a student!",
-        });
+      return res.status(400).json({
+        message:
+          "You are already a TA for this batch and cannot enroll as a student!",
+      });
     }
 
     const existingEnrollment = await Enrollment.findOne({
@@ -142,11 +140,9 @@ export const requestEnrollment = async (req, res) => {
         .status(400)
         .json({ message: "Already enrolled in this batch!" });
     } else if (existingEnrollment && existingEnrollment.status === "pending") {
-      return res
-        .status(400)
-        .json({
-          message: "You have a pending enrollment request for this batch!",
-        });
+      return res.status(400).json({
+        message: "You have a pending enrollment request for this batch!",
+      });
     } else if (existingEnrollment && existingEnrollment.status === "dropped") {
       return res
         .status(400)
@@ -438,11 +434,9 @@ export const submitEvaluation = async (req, res) => {
     }
 
     if (marks.length !== feedback.length) {
-      return res
-        .status(400)
-        .json({
-          message: "Marks and feedback arrays must have the same length.",
-        });
+      return res.status(400).json({
+        message: "Marks and feedback arrays must have the same length.",
+      });
     }
 
     const totalMarks = marks.reduce((sum, mark) => sum + mark, 0);
@@ -453,11 +447,9 @@ export const submitEvaluation = async (req, res) => {
     }
 
     if (totalMarks > exam.totalMarks) {
-      return res
-        .status(400)
-        .json({
-          message: `Total marks (${totalMarks}) exceed the allowed maximum (${exam.totalMarks}).`,
-        });
+      return res.status(400).json({
+        message: `Total marks (${totalMarks}) exceed the allowed maximum (${exam.totalMarks}).`,
+      });
     }
 
     const evaluation = await PeerEvaluation.findById({
@@ -595,12 +587,10 @@ export const raiseTicket = async (req, res) => {
     });
 
     if (existingTicket) {
-      return res
-        .status(409)
-        .json({
-          message:
-            "You have already raised a ticket for this evaluation and has been resolved!",
-        });
+      return res.status(409).json({
+        message:
+          "You have already raised a ticket for this evaluation and has been resolved!",
+      });
     }
 
     const newTicket = new Ticket({
