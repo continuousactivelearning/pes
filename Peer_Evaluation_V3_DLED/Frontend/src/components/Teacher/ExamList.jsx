@@ -3,9 +3,9 @@ import { FaEdit, FaDownload, FaUpload, FaPaperPlane, FaTrashAlt, FaCheck, FaEye,
 
 const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadClick, handleSendEvaluation, handleFlagEvaluations, handleMarkAsDone, handleDeleteExam, handleViewEvaluations, handleViewResults }) => {
   return (
-    <div style={{ marginTop: '2rem', maxHeight: '350px', border: '2px solid #5c5470', borderRadius: '12px', boxShadow: "0 4px 12px #4b3c70" }}>
+    <div style={{ marginTop: '2rem', maxHeight: '100vh', border: '2px solid #5c5470', borderRadius: '12px', boxShadow: "0 4px 12px #4b3c70" }}>
       <h3 style={{ color: '#3f3d56', fontWeight: 'bold', marginBottom: '1rem' }}>Exams</h3>
-      <div style={{ maxHeight: '300px', overflowY: 'auto', overflowX: 'auto', scrollbarWidth: 'thin', scrollbarColor: ' #4b3c70 transparent' }}>
+      <div style={{ maxHeight: '30vh', overflowY: 'auto', overflowX: 'auto', scrollbarWidth: 'thin', scrollbarColor: ' #4b3c70 transparent' }}>
         <table style={{ width: '100%', borderCollapse: 'collapse', borderRadius: '12px' }}>
           <thead style={{ backgroundColor: '#4b3c70', color: '#ffffff', position: 'sticky', top: 0, zIndex: 1 }}>
             <tr>
@@ -27,7 +27,7 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
           <tbody>
             {exams.length === 0 ? (
                 <tr>
-                  <td colSpan="11" style={{ padding: '16px', textAlign: 'center', color: '#3f3d56', fontStyle:'italic' }}>
+                  <td colSpan="13" style={{ padding: '16px', textAlign: 'center', color: '#3f3d56', fontStyle:'italic' }}>
                     No exam scheduled yet.
                   </td>
                 </tr>

@@ -54,7 +54,6 @@ const extractUserIdFromQR = async (filePath) => {
           console.error("Failed to decode QR code:", err);
           reject(new Error("Failed to read QR code"));
         } else {
-          // console.log('QR code decoded successfully:', value.result);
           resolve(value.result);
         }
       };
@@ -64,7 +63,6 @@ const extractUserIdFromQR = async (filePath) => {
     console.error("Error extracting unique ID from QR:", error);
     throw new Error("Failed to extract unique ID from QR code");
   } finally {
-    // Clean up temporary files
     const tempDir = path.join(__dirname, "temp");
     if (fs.existsSync(tempDir)) {
       fs.rmSync(tempDir, { recursive: true, force: true });
