@@ -1,0 +1,126 @@
+/* Action button styles for ExamList */
+.exam-action-btn {
+  border-radius: 8px;
+  color: #ffffff;
+  background: none;
+  font-size: 0.6rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 8px;
+  transition: box-shadow 0.2s, background 0.2s;
+}
+
+.exam-action-btn:hover {
+  background: #f3f3fa;
+  box-shadow: 0 2px 8px #e0e0f0;
+}
+
+@media (max-width: 700px) {
+  .exam-action-btn {
+    font-size: 0.5rem;
+    padding: 3px 6px;
+  }
+}
+
+@media (max-width: 500px) {
+  .exam-action-btn {
+    font-size: 0.45rem;
+    padding: 2px 4px;
+  }
+}
+/* ExamList.css - Responsive styles for ExamList component */
+
+.exam-list-container {
+  margin-top: 2rem;
+  max-height: 100vh;
+  border: 2px solid #5c5470;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px #4b3c70;
+  background: #fff;
+  overflow: hidden;
+}
+
+.exam-list-title {
+  color: #3f3d56;
+  font-weight: bold;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.exam-list-table-wrapper {
+  max-height: 30vh;
+  overflow-y: auto;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  scrollbar-color: #4b3c70 transparent;
+}
+
+.exam-list-table {
+  width: 100%;
+  border-collapse: collapse;
+  border-radius: 12px;
+  /* Remove min-width to allow container to control width */
+}
+
+.exam-list-table th,
+.exam-list-table td {
+  padding: 12px;
+  text-align: center;
+  color: #3f3d56;
+}
+
+.exam-list-table th {
+  background-color: #4b3c70;
+  color: #fff;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.exam-list-table tr {
+  border-bottom: 1px solid #ddd;
+}
+
+.exam-list-actions {
+  display: flex;
+  gap: 1rem;
+  justify-content: center;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+}
+
+@media (max-width: 900px) {
+  .exam-list-table {
+    font-size: 0.95rem;
+  }
+  .exam-list-title {
+    font-size: 1.1rem;
+    padding: 0.5rem;
+  }
+  .exam-list-actions {
+    gap: 0.5rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .exam-list-table {
+    font-size: 0.9rem;
+  }
+  .exam-list-title {
+    font-size: 1rem;
+    padding: 0.3rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .exam-list-table {
+    font-size: 0.8rem;
+  }
+  .exam-list-title {
+    font-size: 0.95rem;
+    padding: 0.2rem;
+  }
+}
