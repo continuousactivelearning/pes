@@ -498,6 +498,321 @@ const ResultsOverlay = ({
             )}
           </div>
         </div>
+
+        {/* Third row: K-Marks Chart & Grade Distribution */}
+        <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", marginTop: "2rem" }}>
+          {/* K vs Marks Chart */}
+          <div
+            style={{
+              flex: "1 1 400px",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+              padding: "2rem 1.2rem",
+              marginBottom: "1.5rem",
+              transition: "box-shadow 0.2s",
+              cursor: "default",
+              border: "1px solid #f7f6fd",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 8px 24px rgba(75,60,112,0.18)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(75,60,112,0.13)")}
+          >
+            <h3
+              style={{
+                textAlign: "center",
+                marginBottom: "1.2rem",
+                fontSize: "1.25rem",
+                color: "#8e24aa",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                textShadow: "0 1px 2px #f7f6fd",
+              }}
+            >
+              K-Parameter vs Total Marks
+            </h3>
+            {loadingAnalytics ? (
+              <div style={{ textAlign: "center" }}>Loading chart...</div>
+            ) : (
+              <Bar
+                data={{
+                  labels: ["K Parameter", "Total Marks"],
+                  datasets: [{
+                    label: "Values",
+                    data: [analytics?.examInfo?.k || 0, analytics?.examInfo?.totalMarks || 0],
+                    backgroundColor: ["#8e24aa", "#ff7043"],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          if (context.dataIndex === 0) {
+                            return `K Parameter: ${context.parsed.y}`;
+                          } else {
+                            return `Total Marks: ${context.parsed.y}`;
+                          }
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    x: {
+                      title: { display: true, text: "Exam Parameters", color: "#8e24aa", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+                    },
+                    y: {
+                      title: { display: true, text: "Value", color: "#8e24aa", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" },
+                      beginAtZero: true,
+                      precision: 0,
+                    }
+                  }
+                }}
+                height={120}
+                width={350}
+              />
+            )}
+          </div>
+
+          {/* Grade Distribution Chart */}
+          <div
+            style={{
+              flex: "1 1 400px",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+              padding: "2rem 1.2rem",
+              marginBottom: "1.5rem",
+              transition: "box-shadow 0.2s",
+              cursor: "default",
+              border: "1px solid #f7f6fd",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 8px 24px rgba(75,60,112,0.18)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(75,60,112,0.13)")}
+          >
+            <h3
+              style={{
+                textAlign: "center",
+                marginBottom: "1.2rem",
+                fontSize: "1.25rem",
+                color: "#d84315",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                textShadow: "0 1px 2px #f7f6fd",
+              }}
+            >
+              Grade Distribution
+            </h3>
+            {loadingAnalytics ? (
+              <div style={{ textAlign: "center" }}>Loading chart...</div>
+            ) : (
+              <Bar
+                data={{
+                  labels: ["A+", "A", "B+", "B", "C+", "C", "D", "F"],
+                  datasets: [{
+                    label: "Students",
+                    data: [
+                      analytics?.gradeDistribution?.["A+"] || 0,
+                      analytics?.gradeDistribution?.["A"] || 0,
+                      analytics?.gradeDistribution?.["B+"] || 0,
+                      analytics?.gradeDistribution?.["B"] || 0,
+                      analytics?.gradeDistribution?.["C+"] || 0,
+                      analytics?.gradeDistribution?.["C"] || 0,
+                      analytics?.gradeDistribution?.["D"] || 0,
+                      analytics?.gradeDistribution?.["F"] || 0,
+                    ],
+                    backgroundColor: ["#2e7d32", "#388e3c", "#43a047", "#66bb6a", "#fbc02d", "#ff9800", "#ff5722", "#d32f2f"],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  plugins: { legend: { display: false } },
+                  scales: {
+                    x: {
+                      title: { display: true, text: "Grade", color: "#d84315", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+                    },
+                    y: {
+                      title: { display: true, text: "Number of Students", color: "#d84315", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" },
+                      beginAtZero: true,
+                      precision: 0,
+                    }
+                  }
+                }}
+                height={120}
+                width={350}
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Fourth row: Participation & Performance Trends */}
+        <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", marginTop: "2rem" }}>
+          {/* Participation Rate Chart */}
+          <div
+            style={{
+              flex: "1 1 400px",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+              padding: "2rem 1.2rem",
+              marginBottom: "1.5rem",
+              transition: "box-shadow 0.2s",
+              cursor: "default",
+              border: "1px solid #f7f6fd",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 8px 24px rgba(75,60,112,0.18)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(75,60,112,0.13)")}
+          >
+            <h3
+              style={{
+                textAlign: "center",
+                marginBottom: "1.2rem",
+                fontSize: "1.25rem",
+                color: "#00695c",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                textShadow: "0 1px 2px #f7f6fd",
+              }}
+            >
+              Participation Rate
+            </h3>
+            {loadingAnalytics ? (
+              <div style={{ textAlign: "center" }}>Loading chart...</div>
+            ) : (
+              <Bar
+                data={{
+                  labels: ["Attended", "Absent"],
+                  datasets: [{
+                    label: "Students",
+                    data: [
+                      analytics?.participation?.attended || 0,
+                      (analytics?.participation?.total || 0) - (analytics?.participation?.attended || 0)
+                    ],
+                    backgroundColor: ["#26a69a", "#ef5350"],
+                    borderRadius: 8,
+                    borderSkipped: false,
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          const total = analytics?.participation?.total || 0;
+                          const percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
+                          return `${context.label}: ${context.parsed.y} (${percentage}%)`;
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    x: {
+                      title: { display: true, text: "Attendance", color: "#00695c", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+                    },
+                    y: {
+                      title: { display: true, text: "Number of Students", color: "#00695c", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" },
+                      beginAtZero: true,
+                      precision: 0,
+                    }
+                  }
+                }}
+                height={120}
+                width={350}
+              />
+            )}
+          </div>
+
+          {/* Average Score by Difficulty Chart */}
+          <div
+            style={{
+              flex: "1 1 400px",
+              maxWidth: 400,
+              background: "#fff",
+              borderRadius: "16px",
+              boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
+              padding: "2rem 1.2rem",
+              marginBottom: "1.5rem",
+              transition: "box-shadow 0.2s",
+              cursor: "default",
+              border: "1px solid #f7f6fd",
+            }}
+            onMouseEnter={e => (e.currentTarget.style.boxShadow = "0 8px 24px rgba(75,60,112,0.18)")}
+            onMouseLeave={e => (e.currentTarget.style.boxShadow = "0 4px 16px rgba(75,60,112,0.13)")}
+          >
+            <h3
+              style={{
+                textAlign: "center",
+                marginBottom: "1.2rem",
+                fontSize: "1.25rem",
+                color: "#6a1b9a",
+                fontWeight: 700,
+                letterSpacing: "0.5px",
+                textShadow: "0 1px 2px #f7f6fd",
+              }}
+            >
+              Score vs. Evaluations Completed
+            </h3>
+            {loadingAnalytics ? (
+              <div style={{ textAlign: "center" }}>Loading chart...</div>
+            ) : (
+              <Bar
+                data={{
+                  labels: analytics?.evaluationEfficiency?.map(item => `${item.evaluationsCount} evals`) || [],
+                  datasets: [{
+                    label: "Average Score",
+                    data: analytics?.evaluationEfficiency?.map(item => item.averageScore) || [],
+                    backgroundColor: "#ab47bc",
+                    borderRadius: 8,
+                    borderSkipped: false,
+                  }]
+                }}
+                options={{
+                  responsive: true,
+                  plugins: { 
+                    legend: { display: false },
+                    tooltip: {
+                      callbacks: {
+                        label: function(context) {
+                          return `Avg Score: ${context.parsed.y.toFixed(2)}`;
+                        }
+                      }
+                    }
+                  },
+                  scales: {
+                    x: {
+                      title: { display: true, text: "Evaluations Completed", color: "#6a1b9a", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+                    },
+                    y: {
+                      title: { display: true, text: "Average Score", color: "#6a1b9a", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" },
+                      beginAtZero: true,
+                      precision: 0,
+                    }
+                  }
+                }}
+                height={120}
+                width={350}
+              />
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -64,7 +64,6 @@ const ExamList = ({ exams, handleEditClick, handleDownloadPDF, handleBulkUploadC
                   </td>
                   <td>
                     <div className="exam-list-actions">
-                      {/* Action Buttons */}
                       {!exam.evaluations_sent && (
                         <>
                           <button
