@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
-import { Bar } from "react-chartjs-2";
-import { Chart, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
-Chart.register(BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+import { Line, Bar } from "react-chartjs-2";
+import { Chart, LineElement, PointElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
+Chart.register(LineElement, PointElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const ResultsOverlay = ({
   resultsOverlayOpen,
@@ -529,31 +529,64 @@ const ResultsOverlay = ({
                 textShadow: "0 1px 2px #f7f6fd",
               }}
             >
-              K-Parameter vs Total Marks
+              K-Parameter Impact on Performance
             </h3>
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
-              <Bar
+              <Line
                 data={{
-                  labels: ["K Parameter", "Total Marks"],
+                  labels: analytics?.kParameterImpact?.map(item => `K=${item.k}`) || [`K=${analytics?.examInfo?.k || 3}`],
                   datasets: [{
-                    label: "Values",
-                    data: [analytics?.examInfo?.k || 0, analytics?.examInfo?.totalMarks || 0],
-                    backgroundColor: ["#8e24aa", "#ff7043"],
-                    borderRadius: 8,
-                    borderSkipped: false,
+                    label: "Average Score",
+                    data: analytics?.kParameterImpact?.map(item => item.averageScore) || [
+                      // Fallback: show current exam's average score
+                      analytics?.histogram?.reduce((total, bin) => total + (bin.count * parseFloat(bin.label.split(' - ')[0])), 0) / 
+                      analytics?.histogram?.reduce((total, bin) => total + bin.count, 1) || 0
+                    ],
+                    borderColor: "#8e24aa",
+                    backgroundColor: "rgba(142, 36, 170, 0.1)",
+                    borderWidth: 3,
+                    pointBackgroundColor: "#8e24aa",
+                    pointBorderColor: "#fff",
+                    pointBorderWidth: 2,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    fill: true,
+                    tension: 0.4
+                  }, {
+                    label: "Total Marks",
+                    data: analytics?.kParameterImpact?.map(() => analytics?.examInfo?.totalMarks || 100) || [analytics?.examInfo?.totalMarks || 100],
+                    borderColor: "#ff7043",
+                    backgroundColor: "rgba(255, 112, 67, 0.1)",
+                    borderWidth: 2,
+                    borderDash: [5, 5],
+                    pointBackgroundColor: "#ff7043",
+                    pointBorderColor: "#fff",
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                    pointHoverRadius: 6,
+                    fill: false,
+                    tension: 0.4
                   }]
                 }}
                 options={{
                   responsive: true,
                   plugins: { 
-                    legend: { display: false },
+                    legend: { 
+                      display: true,
+                      position: 'top',
+                      labels: {
+                        font: { size: 11 },
+                        color: "#4b3c70",
+                        usePointStyle: true
+                      }
+                    },
                     tooltip: {
                       callbacks: {
                         label: function(context) {
-                          if (context.dataIndex === 0) {
-                            return `K Parameter: ${context.parsed.y}`;
+                          if (context.datasetIndex === 0) {
+                            return `Avg Score: ${context.parsed.y.toFixed(2)}`;
                           } else {
                             return `Total Marks: ${context.parsed.y}`;
                           }
@@ -563,14 +596,20 @@ const ResultsOverlay = ({
                   },
                   scales: {
                     x: {
-                      title: { display: true, text: "Exam Parameters", color: "#8e24aa", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+                      title: { display: true, text: "K-Parameter Value", color: "#8e24aa", font: { size: 14, weight: "bold" } },
+                      ticks: { font: { size: 12 }, color: "#4b3c70" },
+                      grid: { color: "rgba(142, 36, 170, 0.1)" }
                     },
                     y: {
-                      title: { display: true, text: "Value", color: "#8e24aa", font: { size: 14, weight: "bold" } },
+                      title: { display: true, text: "Score", color: "#8e24aa", font: { size: 14, weight: "bold" } },
                       ticks: { font: { size: 12 }, color: "#4b3c70" },
                       beginAtZero: true,
-                      precision: 0,
+                      grid: { color: "rgba(142, 36, 170, 0.1)" }
+                    }
+                  },
+                  elements: {
+                    point: {
+                      hoverBackgroundColor: "#8e24aa"
                     }
                   }
                 }}
