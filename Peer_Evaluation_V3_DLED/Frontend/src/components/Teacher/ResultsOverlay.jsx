@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
-import { Line, Bar } from "react-chartjs-2";
-import { Chart, LineElement, PointElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend } from "chart.js";
-Chart.register(LineElement, PointElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+import { Line, Bar, Pie, Scatter } from "react-chartjs-2";
+import { Chart, LineElement, PointElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend, ArcElement } from "chart.js";
+Chart.register(LineElement, PointElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend, ArcElement);
 
 const ResultsOverlay = ({
   resultsOverlayOpen,
@@ -37,6 +37,7 @@ const ResultsOverlay = ({
 
   const leaderboard = analytics?.leaderboard || [];
   const evalStatus = analytics?.evalStatus || { completed: 0, pending: 0, flagged: 0 };
+  
   const histogramData = {
     labels: analytics?.histogram?.map(b => b.label) || [],
     datasets: [
@@ -49,6 +50,7 @@ const ResultsOverlay = ({
       },
     ],
   };
+
   const questionWiseData = {
     labels: analytics?.questionAverages
       ? analytics.questionAverages.map((_, i) => `Q${i + 1}`)
@@ -63,17 +65,143 @@ const ResultsOverlay = ({
       },
     ],
   };
-  const scatterData = {
+
+  const evaluationDistributionData = (() => {
+    if (!analytics?.scatterData || analytics.scatterData.length === 0) {
+      return {
+        labels: [],
+        datasets: [{
+          label: "Number of Students",
+          data: [],
+          backgroundColor: "#43a047",
+          borderRadius: 8,
+          borderSkipped: false,
+        }]
+      };
+    }
+
+    // Group students by number of evaluations
+    const evaluationCounts = {};
+    analytics.scatterData.forEach(point => {
+      const evalCount = point.x;
+      evaluationCounts[evalCount] = (evaluationCounts[evalCount] || 0) + 1;
+    });
+
+    const labels = Object.keys(evaluationCounts).sort((a, b) => parseInt(a) - parseInt(b));
+    const data = labels.map(label => evaluationCounts[label]);
+
+    return {
+      labels: labels.map(label => `${label} evaluation${parseInt(label) === 1 ? '' : 's'}`),
+      datasets: [{
+        label: "Number of Students",
+        data: data,
+        backgroundColor: "#43a047",
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    };
+  })();
+
+  const participationData = {
+    labels: ["Attended", "Absent"],
     datasets: [
       {
-        label: "Students",
-        data: analytics?.scatterData || [],
-        backgroundColor: "#43a047",
-        pointRadius: 6,
-        pointHoverRadius: 9,
-      },
-    ],
+        data: [
+          analytics?.participation?.attended || 0,
+          (analytics?.participation?.total || 0) - (analytics?.participation?.attended || 0)
+        ],
+        backgroundColor: [
+          "rgba(38, 166, 154, 0.9)",
+          "rgba(239, 83, 80, 0.9)"
+        ],
+        borderColor: [
+          "#26a69a",
+          "#ef5350"
+        ],
+        borderWidth: 3,
+        hoverOffset: 15,
+        hoverBackgroundColor: [
+          "#1e8e3e",
+          "#d32f2f"
+        ],
+        hoverBorderColor: "#fff",
+        hoverBorderWidth: 4
+      }
+    ]
   };
+
+  const performanceBreakdownData = (() => {
+    if (!analytics?.histogram || analytics.histogram.length === 0) {
+      return {
+        labels: ["90-100%", "80-89%", "70-79%", "60-69%", "50-59%", "Below 50%"],
+        datasets: [{
+          label: "Number of Students",
+          data: [0, 0, 0, 0, 0, 0],
+          backgroundColor: [
+            "#2e7d32",
+            "#4caf50",
+            "#8bc34a",
+            "#ffc107",
+            "#ff9800",
+            "#f44336",
+          ],
+          borderColor: [
+            "#1b5e20",
+            "#388e3c", 
+            "#689f38",
+            "#ff8f00",
+            "#f57c00",
+            "#d32f2f",
+          ],
+          borderWidth: 2,
+          borderRadius: 8,
+          borderSkipped: false,
+        }]
+      };
+    }
+
+    let excellent = 0, good = 0, average = 0, belowAverage = 0, poor = 0, failing = 0;
+    
+    analytics.histogram.forEach(bin => {
+      const range = bin.label;
+      const count = bin.count;      
+      const lowerBound = parseFloat(range.split(' - ')[0]);
+      
+      if (lowerBound >= 90) excellent += count;
+      else if (lowerBound >= 80) good += count;
+      else if (lowerBound >= 70) average += count;
+      else if (lowerBound >= 60) belowAverage += count;
+      else if (lowerBound >= 50) poor += count;
+      else failing += count;
+    });
+
+    return {
+      labels: ["90-100%", "80-89%", "70-79%", "60-69%", "50-59%", "Below 50%"],
+      datasets: [{
+        label: "Number of Students",
+        data: [excellent, good, average, belowAverage, poor, failing],
+        backgroundColor: [
+          "#2e7d32",
+          "#4caf50",
+          "#8bc34a",
+          "#ffc107",
+          "#ff9800",
+          "#f44336",
+        ],
+        borderColor: [
+          "#1b5e20",
+          "#388e3c",
+          "#689f38", 
+          "#ff8f00",
+          "#f57c00",
+          "#d32f2f",
+        ],
+        borderWidth: 2,
+        borderRadius: 8,
+        borderSkipped: false,
+      }]
+    };
+  })();
 
   return (
     <div
@@ -249,6 +377,7 @@ const ResultsOverlay = ({
             style={{
               flex: "1 1 400px",
               maxWidth: 400,
+              height: "320px",
               background: "#fff",
               borderRadius: "16px",
               boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
@@ -277,39 +406,56 @@ const ResultsOverlay = ({
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
-              <Bar
-                data={histogramData}
-                options={{
-                  responsive: true,
-                  plugins: { legend: { display: false } },
-                  scales: {
-                    x: {
-                      title: { display: true, text: "Average Score Range", color: "#7c5fe6", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+              <div style={{ height: "220px" }}>
+                <Bar
+                  data={histogramData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                      padding: {
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: 20
+                      }
                     },
-                    y: {
-                      title: { display: true, text: "Number of Students", color: "#7c5fe6", font: { size: 14, weight: "bold" } },
-                      ticks: {
-                        font: { size: 12 },
-                        color: "#4b3c70",
-                        stepSize: 1,
-                        callback: value => (Number.isInteger(value) ? value : null),
+                    plugins: { legend: { display: false } },
+                    scales: {
+                      x: {
+                        title: { display: true, text: "Average Score Range", color: "#7c5fe6", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          maxRotation: 45,
+                          minRotation: 0
+                        }
                       },
-                      beginAtZero: true,
-                      precision: 0,
+                      y: {
+                        title: { display: true, text: "Number of Students", color: "#7c5fe6", font: { size: 14, weight: "bold" } },
+                        ticks: {
+                          font: { size: 12 },
+                          color: "#4b3c70",
+                          padding: 10,
+                          stepSize: 1,
+                          callback: value => (Number.isInteger(value) ? value : null),
+                        },
+                        beginAtZero: true,
+                        precision: 0,
+                      },
                     },
-                  },
-                }}
-                height={120}
-                width={350}
-              />
+                  }}
+                />
+              </div>
             )}
           </div>
+          
           {/* Question-wise Average Scores */}
           <div
             style={{
               flex: "1 1 400px",
               maxWidth: 400,
+              height: "320px",
               background: "#fff",
               borderRadius: "16px",
               boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
@@ -338,38 +484,57 @@ const ResultsOverlay = ({
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
-              <Bar
-                data={questionWiseData}
-                options={{
-                  responsive: true,
-                  plugins: { legend: { display: false } },
-                  scales: {
-                    x: {
-                      title: { display: true, text: "Question", color: "#1e88e5", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+              <div style={{ height: "220px" }}>
+                <Bar
+                  data={questionWiseData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                      padding: {
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: 20
+                      }
                     },
-                    y: {
-                      title: { display: true, text: "Average Score", color: "#1e88e5", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" },
-                      beginAtZero: true,
-                      precision: 0,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                      x: {
+                        title: { display: true, text: "Question", color: "#1e88e5", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          maxRotation: 45,
+                          minRotation: 0
+                        }
+                      },
+                      y: {
+                        title: { display: true, text: "Average Score", color: "#1e88e5", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10
+                        },
+                        beginAtZero: true,
+                        precision: 0,
+                      },
                     },
-                  },
-                }}
-                height={120}
-                width={350}
-              />
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
 
-        {/* Second row: Scatter & Status Bar */}
+        {/* Second row: Evaluation Distribution & Status Bar */}
         <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", marginTop: "2rem" }}>
-          {/* Scatter Plot */}
+          {/* Evaluation Distribution Chart */}
           <div
             style={{
               flex: "1 1 400px",
               maxWidth: 400,
+              height: "320px",
               background: "#fff",
               borderRadius: "16px",
               boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
@@ -393,50 +558,80 @@ const ResultsOverlay = ({
                 textShadow: "0 1px 2px #f7f6fd",
               }}
             >
-              Student Averages vs. Number of Evaluations
+              Evaluation Distribution
             </h3>
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
-              <Bar
-                type="scatter"
-                data={scatterData}
-                options={{
-                  responsive: true,
-                  plugins: {
-                    legend: { display: false },
-                    tooltip: {
-                      callbacks: {
-                        label: function(context) {
-                          const d = context.raw;
-                          return `${d.label}: ${d.x} evals, avg ${d.y.toFixed(2)}`;
+              <div style={{ height: "220px" }}>
+                <Bar
+                  data={evaluationDistributionData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                      padding: {
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: 20
+                      }
+                    },
+                    plugins: { 
+                      legend: { display: false },
+                      tooltip: {
+                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                        titleColor: "#fff",
+                        bodyColor: "#fff",
+                        borderColor: "#43a047",
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                          label: function(context) {
+                            const total = evaluationDistributionData.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
+                            return `Students: ${context.parsed.y} (${percentage}%)`;
+                          }
                         }
                       }
-                    }
-                  },
-                  scales: {
-                    x: {
-                      title: { display: true, text: "Number of Evaluations", color: "#43a047", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" }
                     },
-                    y: {
-                      title: { display: true, text: "Average Score", color: "#43a047", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" },
-                      beginAtZero: true,
-                      precision: 0,
+                    scales: {
+                      x: {
+                        title: { display: true, text: "Number of Evaluations Completed", color: "#43a047", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10,
+                          maxRotation: 45,
+                          minRotation: 0
+                        },
+                        grid: { color: "rgba(67, 160, 71, 0.1)" }
+                      },
+                      y: {
+                        title: { display: true, text: "Number of Students", color: "#43a047", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10,
+                          stepSize: 1,
+                          callback: value => Number.isInteger(value) ? value : null
+                        },
+                        beginAtZero: true,
+                        grid: { color: "rgba(67, 160, 71, 0.1)" }
+                      },
                     },
-                  },
-                }}
-                height={120}
-                width={350}
-              />
+                  }}
+                />
+              </div>
             )}
           </div>
+
           {/* Status Bar Chart */}
           <div
             style={{
               flex: "1 1 400px",
               maxWidth: 400,
+              height: "320px",
               background: "#fff",
               borderRadius: "16px",
               boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
@@ -465,36 +660,53 @@ const ResultsOverlay = ({
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
-              <Bar
-                data={{
-                  labels: ["Completed", "Pending", "Flagged"],
-                  datasets: [{
-                    label: "Count",
-                    data: [evalStatus.completed, evalStatus.pending, evalStatus.flagged],
-                    backgroundColor: ["#388e3c", "#fbc02d", "#d32f2f"],
-                    borderRadius: 8,
-                    borderSkipped: false,
-                  }]
-                }}
-                options={{
-                  responsive: true,
-                  plugins: { legend: { display: false } },
-                  scales: {
-                    x: {
-                      title: { display: true, text: "Status", color: "#283593", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+              <div style={{ height: "220px" }}>
+                <Bar
+                  data={{
+                    labels: ["Completed", "Pending", "Flagged"],
+                    datasets: [{
+                      label: "Count",
+                      data: [evalStatus.completed, evalStatus.pending, evalStatus.flagged],
+                      backgroundColor: ["#388e3c", "#fbc02d", "#d32f2f"],
+                      borderRadius: 8,
+                      borderSkipped: false,
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                      padding: {
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: 20
+                      }
                     },
-                    y: {
-                      title: { display: true, text: "Count", color: "#283593", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" },
-                      beginAtZero: true,
-                      precision: 0,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                      x: {
+                        title: { display: true, text: "Status", color: "#283593", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10
+                        }
+                      },
+                      y: {
+                        title: { display: true, text: "Count", color: "#283593", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10
+                        },
+                        beginAtZero: true,
+                        precision: 0,
+                      }
                     }
-                  }
-                }}
-                height={120}
-                width={350}
-              />
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
@@ -506,6 +718,7 @@ const ResultsOverlay = ({
             style={{
               flex: "1 1 400px",
               maxWidth: 400,
+              height: "320px",
               background: "#fff",
               borderRadius: "16px",
               boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
@@ -534,88 +747,104 @@ const ResultsOverlay = ({
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
-              <Line
-                data={{
-                  labels: analytics?.kParameterImpact?.map(item => `K=${item.k}`) || [`K=${analytics?.examInfo?.k || 3}`],
-                  datasets: [{
-                    label: "Average Score",
-                    data: analytics?.kParameterImpact?.map(item => item.averageScore) || [
-                      // Fallback: show current exam's average score
-                      analytics?.histogram?.reduce((total, bin) => total + (bin.count * parseFloat(bin.label.split(' - ')[0])), 0) / 
-                      analytics?.histogram?.reduce((total, bin) => total + bin.count, 1) || 0
-                    ],
-                    borderColor: "#8e24aa",
-                    backgroundColor: "rgba(142, 36, 170, 0.1)",
-                    borderWidth: 3,
-                    pointBackgroundColor: "#8e24aa",
-                    pointBorderColor: "#fff",
-                    pointBorderWidth: 2,
-                    pointRadius: 6,
-                    pointHoverRadius: 8,
-                    fill: true,
-                    tension: 0.4
-                  }, {
-                    label: "Total Marks",
-                    data: analytics?.kParameterImpact?.map(() => analytics?.examInfo?.totalMarks || 100) || [analytics?.examInfo?.totalMarks || 100],
-                    borderColor: "#ff7043",
-                    backgroundColor: "rgba(255, 112, 67, 0.1)",
-                    borderWidth: 2,
-                    borderDash: [5, 5],
-                    pointBackgroundColor: "#ff7043",
-                    pointBorderColor: "#fff",
-                    pointBorderWidth: 2,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    fill: false,
-                    tension: 0.4
-                  }]
-                }}
-                options={{
-                  responsive: true,
-                  plugins: { 
-                    legend: { 
-                      display: true,
-                      position: 'top',
-                      labels: {
-                        font: { size: 11 },
-                        color: "#4b3c70",
-                        usePointStyle: true
+              <div style={{ height: "220px" }}>
+                <Line
+                  data={{
+                    labels: analytics?.kParameterImpact?.map(item => `K=${item.k}`) || [`K=${analytics?.examInfo?.k || 3}`],
+                    datasets: [{
+                      label: "Average Score",
+                      data: analytics?.kParameterImpact?.map(item => item.averageScore) || [
+                        analytics?.histogram?.reduce((total, bin) => total + (bin.count * parseFloat(bin.label.split(' - ')[0])), 0) / 
+                        analytics?.histogram?.reduce((total, bin) => total + bin.count, 1) || 0
+                      ],
+                      borderColor: "#8e24aa",
+                      backgroundColor: "rgba(142, 36, 170, 0.1)",
+                      borderWidth: 3,
+                      pointBackgroundColor: "#8e24aa",
+                      pointBorderColor: "#fff",
+                      pointBorderWidth: 2,
+                      pointRadius: 6,
+                      pointHoverRadius: 8,
+                      fill: true,
+                      tension: 0.4
+                    }, {
+                      label: "Total Marks",
+                      data: analytics?.kParameterImpact?.map(() => analytics?.examInfo?.totalMarks || 100) || [analytics?.examInfo?.totalMarks || 100],
+                      borderColor: "#ff7043",
+                      backgroundColor: "rgba(255, 112, 67, 0.1)",
+                      borderWidth: 2,
+                      borderDash: [5, 5],
+                      pointBackgroundColor: "#ff7043",
+                      pointBorderColor: "#fff",
+                      pointBorderWidth: 2,
+                      pointRadius: 4,
+                      pointHoverRadius: 6,
+                      fill: false,
+                      tension: 0.4
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                      padding: {
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: 20
                       }
                     },
-                    tooltip: {
-                      callbacks: {
-                        label: function(context) {
-                          if (context.datasetIndex === 0) {
-                            return `Avg Score: ${context.parsed.y.toFixed(2)}`;
-                          } else {
-                            return `Total Marks: ${context.parsed.y}`;
+                    plugins: { 
+                      legend: { 
+                        display: true,
+                        position: 'top',
+                        labels: {
+                          font: { size: 11 },
+                          color: "#4b3c70",
+                          usePointStyle: true
+                        }
+                      },
+                      tooltip: {
+                        callbacks: {
+                          label: function(context) {
+                            if (context.datasetIndex === 0) {
+                              return `Avg Score: ${context.parsed.y.toFixed(2)}`;
+                            } else {
+                              return `Total Marks: ${context.parsed.y}`;
+                            }
                           }
                         }
                       }
-                    }
-                  },
-                  scales: {
-                    x: {
-                      title: { display: true, text: "K-Parameter Value", color: "#8e24aa", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" },
-                      grid: { color: "rgba(142, 36, 170, 0.1)" }
                     },
-                    y: {
-                      title: { display: true, text: "Score", color: "#8e24aa", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" },
-                      beginAtZero: true,
-                      grid: { color: "rgba(142, 36, 170, 0.1)" }
+                    scales: {
+                      x: {
+                        title: { display: true, text: "K-Parameter Value", color: "#8e24aa", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10
+                        },
+                        grid: { color: "rgba(142, 36, 170, 0.1)" }
+                      },
+                      y: {
+                        title: { display: true, text: "Score", color: "#8e24aa", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10
+                        },
+                        beginAtZero: true,
+                        grid: { color: "rgba(142, 36, 170, 0.1)" }
+                      }
+                    },
+                    elements: {
+                      point: {
+                        hoverBackgroundColor: "#8e24aa"
+                      }
                     }
-                  },
-                  elements: {
-                    point: {
-                      hoverBackgroundColor: "#8e24aa"
-                    }
-                  }
-                }}
-                height={120}
-                width={350}
-              />
+                  }}
+                />
+              </div>
             )}
           </div>
 
@@ -624,6 +853,7 @@ const ResultsOverlay = ({
             style={{
               flex: "1 1 400px",
               maxWidth: 400,
+              height: "320px",
               background: "#fff",
               borderRadius: "16px",
               boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
@@ -652,56 +882,74 @@ const ResultsOverlay = ({
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
-              <Bar
-                data={{
-                  labels: ["A+", "A", "B+", "B", "C+", "C", "D", "F"],
-                  datasets: [{
-                    label: "Students",
-                    data: [
-                      analytics?.gradeDistribution?.["A+"] || 0,
-                      analytics?.gradeDistribution?.["A"] || 0,
-                      analytics?.gradeDistribution?.["B+"] || 0,
-                      analytics?.gradeDistribution?.["B"] || 0,
-                      analytics?.gradeDistribution?.["C+"] || 0,
-                      analytics?.gradeDistribution?.["C"] || 0,
-                      analytics?.gradeDistribution?.["D"] || 0,
-                      analytics?.gradeDistribution?.["F"] || 0,
-                    ],
-                    backgroundColor: ["#2e7d32", "#388e3c", "#43a047", "#66bb6a", "#fbc02d", "#ff9800", "#ff5722", "#d32f2f"],
-                    borderRadius: 8,
-                    borderSkipped: false,
-                  }]
-                }}
-                options={{
-                  responsive: true,
-                  plugins: { legend: { display: false } },
-                  scales: {
-                    x: {
-                      title: { display: true, text: "Grade", color: "#d84315", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" }
+              <div style={{ height: "220px" }}>
+                <Bar
+                  data={{
+                    labels: ["A+", "A", "B+", "B", "C+", "C", "D", "F"],
+                    datasets: [{
+                      label: "Students",
+                      data: [
+                        analytics?.gradeDistribution?.["A+"] || 0,
+                        analytics?.gradeDistribution?.["A"] || 0,
+                        analytics?.gradeDistribution?.["B+"] || 0,
+                        analytics?.gradeDistribution?.["B"] || 0,
+                        analytics?.gradeDistribution?.["C+"] || 0,
+                        analytics?.gradeDistribution?.["C"] || 0,
+                        analytics?.gradeDistribution?.["D"] || 0,
+                        analytics?.gradeDistribution?.["F"] || 0,
+                      ],
+                      backgroundColor: ["#2e7d32", "#388e3c", "#43a047", "#66bb6a", "#fbc02d", "#ff9800", "#ff5722", "#d32f2f"],
+                      borderRadius: 8,
+                      borderSkipped: false,
+                    }]
+                  }}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                      padding: {
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: 20
+                      }
                     },
-                    y: {
-                      title: { display: true, text: "Number of Students", color: "#d84315", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" },
-                      beginAtZero: true,
-                      precision: 0,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                      x: {
+                        title: { display: true, text: "Grade", color: "#d84315", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10
+                        }
+                      },
+                      y: {
+                        title: { display: true, text: "Number of Students", color: "#d84315", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10
+                        },
+                        beginAtZero: true,
+                        precision: 0,
+                      }
                     }
-                  }
-                }}
-                height={120}
-                width={350}
-              />
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>
 
-        {/* Fourth row: Participation & Performance Trends */}
+        {/* Fourth row: Participation Pie Chart & Performance Breakdown */}
         <div style={{ display: "flex", gap: "2rem", justifyContent: "center", flexWrap: "wrap", marginTop: "2rem" }}>
-          {/* Participation Rate Chart */}
+          {/* Participation Rate Pie Chart */}
           <div
             style={{
               flex: "1 1 400px",
               maxWidth: 400,
+              height: "320px",
               background: "#fff",
               borderRadius: "16px",
               boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
@@ -730,58 +978,56 @@ const ResultsOverlay = ({
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
-              <Bar
-                data={{
-                  labels: ["Attended", "Absent"],
-                  datasets: [{
-                    label: "Students",
-                    data: [
-                      analytics?.participation?.attended || 0,
-                      (analytics?.participation?.total || 0) - (analytics?.participation?.attended || 0)
-                    ],
-                    backgroundColor: ["#26a69a", "#ef5350"],
-                    borderRadius: 8,
-                    borderSkipped: false,
-                  }]
-                }}
-                options={{
-                  responsive: true,
-                  plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                      callbacks: {
-                        label: function(context) {
-                          const total = analytics?.participation?.total || 0;
-                          const percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
-                          return `${context.label}: ${context.parsed.y} (${percentage}%)`;
+              <div style={{ height: "220px", display: "flex", justifyContent: "center", alignItems: "center" }}>
+                <Pie
+                  data={participationData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                      legend: {
+                        position: 'bottom',
+                        labels: {
+                          padding: 20,
+                          font: { size: 13, weight: 'bold' },
+                          color: "#4b3c70",
+                          usePointStyle: true,
+                          pointStyle: 'circle'
+                        }
+                      },
+                      tooltip: {
+                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                        titleColor: "#fff",
+                        bodyColor: "#fff",
+                        borderColor: "#00695c",
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                          label: function(context) {
+                            const total = analytics?.participation?.total || 0;
+                            const percentage = total > 0 ? ((context.parsed / total) * 100).toFixed(1) : 0;
+                            return `${context.label}: ${context.parsed} (${percentage}%)`;
+                          }
                         }
                       }
-                    }
-                  },
-                  scales: {
-                    x: {
-                      title: { display: true, text: "Attendance", color: "#00695c", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" }
                     },
-                    y: {
-                      title: { display: true, text: "Number of Students", color: "#00695c", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" },
-                      beginAtZero: true,
-                      precision: 0,
+                    animation: {
+                      animateRotate: true,
+                      animateScale: true,
+                      duration: 1000
                     }
-                  }
-                }}
-                height={120}
-                width={350}
-              />
+                  }}
+                />
+              </div>
             )}
           </div>
 
-          {/* Average Score by Difficulty Chart */}
+          {/* Performance Breakdown Chart */}
           <div
             style={{
               flex: "1 1 400px",
               maxWidth: 400,
+              height: "320px",
               background: "#fff",
               borderRadius: "16px",
               boxShadow: "0 4px 16px rgba(75,60,112,0.13)",
@@ -805,50 +1051,71 @@ const ResultsOverlay = ({
                 textShadow: "0 1px 2px #f7f6fd",
               }}
             >
-              Score vs. Evaluations Completed
+              Performance Breakdown
             </h3>
             {loadingAnalytics ? (
               <div style={{ textAlign: "center" }}>Loading chart...</div>
             ) : (
-              <Bar
-                data={{
-                  labels: analytics?.evaluationEfficiency?.map(item => `${item.evaluationsCount} evals`) || [],
-                  datasets: [{
-                    label: "Average Score",
-                    data: analytics?.evaluationEfficiency?.map(item => item.averageScore) || [],
-                    backgroundColor: "#ab47bc",
-                    borderRadius: 8,
-                    borderSkipped: false,
-                  }]
-                }}
-                options={{
-                  responsive: true,
-                  plugins: { 
-                    legend: { display: false },
-                    tooltip: {
-                      callbacks: {
-                        label: function(context) {
-                          return `Avg Score: ${context.parsed.y.toFixed(2)}`;
+              <div style={{ height: "220px" }}>
+                <Bar
+                  data={performanceBreakdownData}
+                  options={{
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    layout: {
+                      padding: {
+                        left: 20,
+                        right: 20,
+                        top: 20,
+                        bottom: 20
+                      }
+                    },
+                    plugins: { 
+                      legend: { display: false },
+                      tooltip: {
+                        backgroundColor: "rgba(0, 0, 0, 0.8)",
+                        titleColor: "#fff",
+                        bodyColor: "#fff",
+                        borderColor: "#6a1b9a",
+                        borderWidth: 1,
+                        cornerRadius: 8,
+                        callbacks: {
+                          label: function(context) {
+                            const total = performanceBreakdownData.datasets[0].data.reduce((a, b) => a + b, 0);
+                            const percentage = total > 0 ? ((context.parsed.y / total) * 100).toFixed(1) : 0;
+                            return `Students: ${context.parsed.y} (${percentage}%)`;
+                          }
                         }
                       }
-                    }
-                  },
-                  scales: {
-                    x: {
-                      title: { display: true, text: "Evaluations Completed", color: "#6a1b9a", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" }
                     },
-                    y: {
-                      title: { display: true, text: "Average Score", color: "#6a1b9a", font: { size: 14, weight: "bold" } },
-                      ticks: { font: { size: 12 }, color: "#4b3c70" },
-                      beginAtZero: true,
-                      precision: 0,
+                    scales: {
+                      x: {
+                        title: { display: true, text: "Score Range", color: "#6a1b9a", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 11 }, 
+                          color: "#4b3c70",
+                          padding: 10,
+                          maxRotation: 45,
+                          minRotation: 0
+                        },
+                        grid: { color: "rgba(106, 27, 154, 0.1)" }
+                      },
+                      y: {
+                        title: { display: true, text: "Number of Students", color: "#6a1b9a", font: { size: 14, weight: "bold" } },
+                        ticks: { 
+                          font: { size: 12 }, 
+                          color: "#4b3c70",
+                          padding: 10,
+                          stepSize: 1,
+                          callback: value => Number.isInteger(value) ? value : null
+                        },
+                        beginAtZero: true,
+                        grid: { color: "rgba(106, 27, 154, 0.1)" }
+                      }
                     }
-                  }
-                }}
-                height={120}
-                width={350}
-              />
+                  }}
+                />
+              </div>
             )}
           </div>
         </div>

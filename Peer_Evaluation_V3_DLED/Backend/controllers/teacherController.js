@@ -1001,119 +1001,9 @@ export const downloadResultsCSV = async (req, res) => {
   }
 };
 
-// export const getResultsAnalytics = async (req, res) => {
-//   const { examId } = req.params;
-//   try {
-//     const evaluations = await PeerEvaluation.find({ exam: examId }).populate('student');
-
-//     const studentTotals = {};
-//     evaluations.forEach(ev => {
-//       const studentId = ev.student?._id?.toString();
-//       if (!studentId) return;
-//       let totalMarks = 0;
-//       if (Array.isArray(ev.score)) totalMarks = ev.score.reduce((a, b) => a + b, 0);
-//       else if (typeof ev.score === 'number') totalMarks = ev.score;
-//       if (!studentTotals[studentId]) {
-//         studentTotals[studentId] = {
-//           name: ev.student.name,
-//           email: ev.student.email,
-//           totals: [],
-//         };
-//       }
-//       studentTotals[studentId].totals.push(totalMarks);
-//     });
-//     const averages = Object.values(studentTotals).map(entry => ({
-//       name: entry.name,
-//       email: entry.email,
-//       avg: entry.totals.reduce((a, b) => a + b, 0) / entry.totals.length,
-//     }));
-//     const sortedAverages = [...averages].sort((a, b) => b.avg - a.avg);
-//     const leaderboard = sortedAverages.slice(0, 3);
-
-//     const avgScores = averages.map(a => a.avg);
-//     const minScore = Math.min(...avgScores, 0);
-//     const maxScore = Math.max(...avgScores, 0);
-//     const binCount = 6;
-//     const binSize = Math.ceil((maxScore - minScore) / binCount) || 1;
-//     const bins = [];
-//     for (let i = 0; i < binCount; i++) {
-//       const start = minScore + i * binSize;
-//       const end = i === binCount - 1 ? maxScore : start + binSize - 1;
-//       bins.push({
-//         label: `${start} - ${end}`,
-//         count: 0,
-//         range: [start, end],
-//       });
-//     }
-//     avgScores.forEach(score => {
-//       for (let i = 0; i < bins.length; i++) {
-//         const [start, end] = bins[i].range;
-//         if (score >= start && (i === bins.length - 1 ? score <= end : score < end + 1)) {
-//           bins[i].count += 1;
-//           break;
-//         }
-//       }
-//     });
-
-//     let maxQuestions = 0;
-//     evaluations.forEach(ev => {
-//       if (Array.isArray(ev.score)) maxQuestions = Math.max(maxQuestions, ev.score.length);
-//     });
-//     const questionSums = Array(maxQuestions).fill(0);
-//     const questionCounts = Array(maxQuestions).fill(0);
-//     evaluations.forEach(ev => {
-//       if (Array.isArray(ev.score)) {
-//         ev.score.forEach((val, idx) => {
-//           questionSums[idx] += val;
-//           questionCounts[idx] += 1;
-//         });
-//       }
-//     });
-//     const questionAverages = questionSums.map((sum, idx) =>
-//       questionCounts[idx] ? sum / questionCounts[idx] : 0
-//     );
-
-//     const studentEvalCount = {};
-//     evaluations.forEach(ev => {
-//       const sid = ev.student?._id?.toString();
-//       if (!sid) return;
-//       if (!studentEvalCount[sid]) studentEvalCount[sid] = { count: 0, total: 0, name: ev.student?.name || "-" };
-//       let totalMarks = 0;
-//       if (Array.isArray(ev.score)) totalMarks = ev.score.reduce((a, b) => a + b, 0);
-//       else if (typeof ev.score === "number") totalMarks = ev.score;
-//       studentEvalCount[sid].count += 1;
-//       studentEvalCount[sid].total += totalMarks;
-//     });
-//     const scatterData = Object.values(studentEvalCount).map(s => ({
-//       x: s.count,
-//       y: s.total / s.count,
-//       label: s.name,
-//     }));
-
-//     let completed = 0, pending = 0, flagged = 0;
-//     evaluations.forEach(ev => {
-//       if (ev.eval_status === "completed" && ev.ticket === 0) completed += 1;
-//       else if (ev.eval_status === "pending" && ev.ticket === 0) pending += 1;
-//       if (ev.ticket === 1 || ev.ticket === 2) flagged += 1;
-//     });
-//     const evalStatus = { completed, pending, flagged };
-
-//     res.json({
-//       leaderboard,
-//       histogram: bins.map(b => ({ label: b.label, count: b.count })),
-//       questionAverages,
-//       scatterData,
-//       evalStatus,
-//     });
-//   } catch (error) {
-//     res.status(500).json({ message: 'Failed to get analytics!' });
-//   }
-// };
-
 export const getResultsAnalytics = async (req, res) => {
   const { examId } = req.params;
   try {
-    // Get exam info and evaluations
     const exam = await Examination.findById(examId);
     if (!exam) {
       return res.status(404).json({ message: 'Exam not found!' });
@@ -1121,16 +1011,13 @@ export const getResultsAnalytics = async (req, res) => {
 
     const evaluations = await PeerEvaluation.find({ exam: examId }).populate('student');
     
-    // Get total enrolled students for participation calculation
     const totalEnrolled = await Enrollment.countDocuments({ 
       batch: exam.batch, 
       status: 'active' 
     });
     
-    // Get total submissions
     const totalSubmissions = await Document.countDocuments({ examId });
 
-    // Existing calculations...
     const studentTotals = {};
     evaluations.forEach(ev => {
       const studentId = ev.student?._id?.toString();
@@ -1157,7 +1044,6 @@ export const getResultsAnalytics = async (req, res) => {
     const sortedAverages = [...averages].sort((a, b) => b.avg - a.avg);
     const leaderboard = sortedAverages.slice(0, 3);
 
-    // Histogram calculation (existing)
     const avgScores = averages.map(a => a.avg);
     const minScore = Math.min(...avgScores, 0);
     const maxScore = Math.max(...avgScores, 0);
@@ -1183,7 +1069,6 @@ export const getResultsAnalytics = async (req, res) => {
       }
     });
 
-    // Question averages (existing)
     let maxQuestions = 0;
     evaluations.forEach(ev => {
       if (Array.isArray(ev.score)) maxQuestions = Math.max(maxQuestions, ev.score.length);
@@ -1202,7 +1087,6 @@ export const getResultsAnalytics = async (req, res) => {
       questionCounts[idx] ? sum / questionCounts[idx] : 0
     );
 
-    // Scatter data (existing)
     const studentEvalCount = {};
     evaluations.forEach(ev => {
       const sid = ev.student?._id?.toString();
@@ -1220,7 +1104,6 @@ export const getResultsAnalytics = async (req, res) => {
       label: s.name,
     }));
 
-    // Evaluation status (existing)
     let completed = 0, pending = 0, flagged = 0;
     evaluations.forEach(ev => {
       if (ev.eval_status === "completed" && ev.ticket === 0) completed += 1;
@@ -1229,13 +1112,11 @@ export const getResultsAnalytics = async (req, res) => {
     });
     const evalStatus = { completed, pending, flagged };
 
-    // NEW: Exam info for K-Parameter vs Total Marks chart
     const examInfo = {
       k: exam.k,
       totalMarks: exam.totalMarks
     };
 
-    // NEW: Grade distribution calculation
     const gradeDistribution = {};
     const gradeRanges = [
       { grade: 'A+', min: 90, max: 100 },
@@ -1248,12 +1129,10 @@ export const getResultsAnalytics = async (req, res) => {
       { grade: 'F', min: 0, max: 29 }
     ];
 
-    // Initialize all grades to 0
     gradeRanges.forEach(range => {
       gradeDistribution[range.grade] = 0;
     });
 
-    // Calculate percentage scores and assign grades
     averages.forEach(student => {
       const percentage = (student.avg / exam.totalMarks) * 100;
       const grade = gradeRanges.find(range => percentage >= range.min && percentage <= range.max);
@@ -1262,13 +1141,11 @@ export const getResultsAnalytics = async (req, res) => {
       }
     });
 
-    // NEW: Participation rate
     const participation = {
       total: totalEnrolled,
       attended: totalSubmissions
     };
 
-    // NEW: Evaluation efficiency (correlation between evaluations completed and scores)
     const evaluatorCounts = {};
     evaluations.forEach(ev => {
       const evaluatorId = ev.evaluator?.toString();
@@ -1280,7 +1157,6 @@ export const getResultsAnalytics = async (req, res) => {
       evaluatorCounts[evaluatorId].count++;
     });
 
-    // Get scores for evaluators (students who evaluated others)
     const evaluationEfficiency = [];
     for (let evalCount = 0; evalCount <= exam.k; evalCount++) {
       const studentsWithThisCount = Object.keys(evaluatorCounts).filter(
@@ -1318,26 +1194,24 @@ export const getResultsAnalytics = async (req, res) => {
     const kParameterImpact = [
       { 
         k: Math.max(1, exam.k - 1), 
-        averageScore: currentAverage * 0.85 // Theoretical: lower k might reduce quality by 15%
+        averageScore: currentAverage * 0.85
       },
       { 
         k: exam.k, 
-        averageScore: currentAverage // Current actual average
+        averageScore: currentAverage
       },
       { 
         k: exam.k + 1, 
-        averageScore: Math.min(exam.totalMarks, currentAverage * 1.1) // Theoretical: higher k might improve by 10%, capped at totalMarks
+        averageScore: Math.min(exam.totalMarks, currentAverage * 1.1)
       }
     ];
 
     res.json({
-      // Existing data
       leaderboard,
       histogram: bins.map(b => ({ label: b.label, count: b.count })),
       questionAverages,
       scatterData,
       evalStatus,
-      // NEW data for additional charts
       examInfo,
       gradeDistribution,
       participation,
