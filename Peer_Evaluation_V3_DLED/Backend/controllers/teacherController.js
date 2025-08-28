@@ -776,15 +776,10 @@ export const sendEvaluation = async (req, res) => {
 
 export const flagEvaluations = async (req, res) => {
   const { examId } = req.params; 
-
-  if (!examId) {
-    return res.status(400).json({ message: 'Exam ID is required!' });
-  }
+  if (!examId) return res.status(400).json({ message: 'Exam ID is required!' });
 
   const exam = await Examination.findById(examId);
-  if (!exam) {
-    return res.status(404).json({ message: 'Exam not found!' });
-  }
+  if (!exam) return res.status(404).json({ message: 'Exam not found!' });
 
   try {
     const evaluations = await PeerEvaluation.find({ 
@@ -795,95 +790,82 @@ export const flagEvaluations = async (req, res) => {
     if (!evaluations.length) {
       return res.status(400).json({ message: 'No completed evaluations found for this exam!' });
     }
-    console.log(`Found ${evaluations.length} completed evaluations for exam ID: ${examId}`);
 
     const enrolledStudents = await Enrollment.find({ 
       batch: exam.batch, 
       status: 'active' 
     }).populate('student');
-    console.log(`Found ${enrolledStudents.length} enrolled students for exam ID: ${examId}`);
 
+    // Build a map: studentId -> [evaluations]
+    const studentEvalMap = new Map();
+    for (const evalObj of evaluations) {
+      const sid = evalObj.student._id.toString();
+      if (!studentEvalMap.has(sid)) studentEvalMap.set(sid, []);
+      studentEvalMap.get(sid).push(evalObj);
+    }
+
+    // Calculate averages
     const studentAverages = new Map();
-    
-    enrolledStudents.forEach(enrollment => {
-      const studentId = enrollment.student._id.toString();
-      const studentEvaluations = evaluations.filter(evaluation => evaluation.student._id.toString() === studentId);
-
-      if (studentEvaluations.length > 0) {
-        const totalScore = studentEvaluations.reduce((sum, evaluation) => {
-          const evalScore = Array.isArray(evaluation.score) 
-            ? evaluation.score.reduce((a, b) => a + b, 0) 
-            : evaluation.score;
-          return sum + evalScore;
+    for (const enrollment of enrolledStudents) {
+      const sid = enrollment.student._id.toString();
+      const evals = studentEvalMap.get(sid) || [];
+      if (evals.length > 0) {
+        const totalScore = evals.reduce((sum, e) => {
+          const s = Array.isArray(e.score) ? e.score.reduce((a, b) => a + b, 0) : e.score;
+          return sum + s;
         }, 0);
-        
-        const avgScore = totalScore / studentEvaluations.length;
-        studentAverages.set(studentId, avgScore);
+        studentAverages.set(sid, totalScore / evals.length);
       }
-    });
+    }
+
+    if (studentAverages.size === 0) {
+      return res.status(400).json({ message: 'No averages could be calculated.' });
+    }
 
     const classAverage = Array.from(studentAverages.values()).reduce((sum, avg) => sum + avg, 0) / studentAverages.size;
-    console.log('Class average score:', classAverage);
-
-    const variance = Array.from(studentAverages.values()).reduce((sum, avg) => {
-      return sum + Math.pow(avg - classAverage, 2);
-    }, 0) / studentAverages.size;
-    
+    const variance = Array.from(studentAverages.values()).reduce((sum, avg) => sum + Math.pow(avg - classAverage, 2), 0) / studentAverages.size;
     const classStdDev = Math.sqrt(variance);
-    console.log('Class standard deviation:', classStdDev);
 
     await Statistics.findOneAndUpdate(
       { exam_id: examId },
-      { 
-        exam_id: examId,
-        avg_score: classAverage,
-        std_dev: classStdDev 
-      },
+      { exam_id: examId, avg_score: classAverage, std_dev: classStdDev },
       { upsert: true, new: true }
     );
-    console.log('Statistics updated in the database:', { exam_id: examId, avg_score: classAverage, std_dev: classStdDev });
+
+    let flagIds = [];
 
     if (exam.k <= 3) {
-      console.log('Case 1: k <= 3 - Checking evaluations against class standard deviation');
-      for (const evaluation of evaluations) {
-        const evalScore = Array.isArray(evaluation.score) 
-          ? evaluation.score.reduce((a, b) => a + b, 0) 
-          : evaluation.score;
-        
+      // Flag by class std dev
+      for (const evalObj of evaluations) {
+        const evalScore = Array.isArray(evalObj.score) ? evalObj.score.reduce((a, b) => a + b, 0) : evalObj.score;
         const deviation = Math.abs(evalScore - classAverage);
-        
-        if (deviation > 2 * classStdDev) {
-          await PeerEvaluation.findByIdAndUpdate(evaluation._id, { ticket: 1 });
-        }
+        if (deviation > 2 * classStdDev) flagIds.push(evalObj._id);
       }
     } else {
-      console.log('Case 2: k > 3 - Checking evaluations against individual student standard deviations');
-      for (const [studentId, studentAvg] of studentAverages) {
-        const studentEvaluations = evaluations.filter(evaluation => evaluation.student._id.toString() === studentId);
-
-        if (studentEvaluations.length > 1) {
-          const studentVariance = studentEvaluations.reduce((sum, evaluation) => {
-            const evalScore = Array.isArray(evaluation.score) 
-              ? evaluation.score.reduce((a, b) => a + b, 0) 
-              : evaluation.score;
-            return sum + Math.pow(evalScore - studentAvg, 2);
-          }, 0) / studentEvaluations.length;
-          
+      // Flag by individual std dev
+      for (const [sid, studentAvg] of studentAverages) {
+        const evals = studentEvalMap.get(sid) || [];
+        if (evals.length > 1) {
+          const studentVariance = evals.reduce((sum, e) => {
+            const s = Array.isArray(e.score) ? e.score.reduce((a, b) => a + b, 0) : e.score;
+            return sum + Math.pow(s - studentAvg, 2);
+          }, 0) / evals.length;
           const studentStdDev = Math.sqrt(studentVariance);
-          
-          for (const evaluation of studentEvaluations) {
-            const evalScore = Array.isArray(evaluation.score) 
-              ? evaluation.score.reduce((a, b) => a + b, 0) 
-              : evaluation.score;
-            
-            const deviation = Math.abs(evalScore - studentAvg);
-            
-            if (deviation > 1.5 * studentStdDev) {
-              await PeerEvaluation.findByIdAndUpdate(evaluation._id, { ticket: 1 });
-            }
+          for (const e of evals) {
+            const s = Array.isArray(e.score) ? e.score.reduce((a, b) => a + b, 0) : e.score;
+            const deviation = Math.abs(s - studentAvg);
+            if (deviation > 1.5 * studentStdDev) flagIds.push(e._id);
           }
         }
       }
+    }
+
+    // Bulk update all flagged evaluations
+    if (flagIds.length > 0) {
+      await PeerEvaluation.updateMany(
+        { _id: { $in: flagIds } },
+        { $set: { ticket: 1 } }
+      );
     }
 
     exam.flags = true;
