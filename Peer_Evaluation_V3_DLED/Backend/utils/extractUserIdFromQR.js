@@ -16,8 +16,9 @@ const __dirname = path.dirname(__filename);
  * @returns {Promise<string>} - Extracted unique ID from the QR code.
  */
 const extractUserIdFromQR = async (filePath) => {
+  const outputDir = path.join(__dirname, "temp");
+  let imagePath, processedImagePath;
   try {
-    const outputDir = path.join(__dirname, "temp");
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir);
     }
@@ -30,7 +31,7 @@ const extractUserIdFromQR = async (filePath) => {
     };
 
     await poppler.convert(filePath, options);
-    const imagePath = path.join(outputDir, "page-1.jpg");
+    imagePath = path.join(outputDir, "page-1.jpg");
 
     const image = await Jimp.read(imagePath);
 
@@ -42,16 +43,15 @@ const extractUserIdFromQR = async (filePath) => {
     );
     croppedImage.greyscale().contrast(1).resize(500, 500);
 
-    const processedImagePath = path.join(outputDir, "processed-page-1.jpg");
+    processedImagePath = path.join(outputDir, "processed-page-1.jpg");
     await croppedImage.writeAsync(processedImagePath);
 
     const processedJimpImage = await Jimp.read(processedImagePath);
 
-    return new Promise((resolve, reject) => {
+    return await new Promise((resolve, reject) => {
       const qr = new QrCode();
       qr.callback = function (err, value) {
         if (err || !value) {
-          console.error("Failed to decode QR code:", err);
           reject(new Error("Failed to read QR code"));
         } else {
           resolve(value.result);
@@ -60,12 +60,16 @@ const extractUserIdFromQR = async (filePath) => {
       qr.decode(processedJimpImage.bitmap);
     });
   } catch (error) {
-    console.error("Error extracting unique ID from QR:", error);
-    throw new Error("Failed to extract unique ID from QR code");
+    // Instead of logging and throwing, just throw to let parent handle
+    throw error;
   } finally {
-    const tempDir = path.join(__dirname, "temp");
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
+    // Clean up temp directory, but don't throw if fails
+    try {
+      if (fs.existsSync(outputDir)) {
+        fs.rmSync(outputDir, { recursive: true, force: true });
+      }
+    } catch (cleanupErr) {
+      // Optionally log cleanup error, but don't throw
     }
   }
 };

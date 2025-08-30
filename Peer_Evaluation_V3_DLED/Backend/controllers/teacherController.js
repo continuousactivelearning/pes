@@ -640,6 +640,53 @@ export const downloadPDF = async (req, res) => {
   }
 };
 
+// export const bulkUploadDocuments = async (req, res) => {
+//   try {
+//     const { examId } = req.body; 
+//     const uploadedBy = req.user._id;
+//     const files = req.files;
+
+//     let added = 0;
+//     let updated = 0;
+
+//     for (const file of files) {
+//       const uniqueId = await extractUserIdFromQR(file.path);
+//       if (!uniqueId) continue;
+//       const isUIDValid = await UIDMap.exists({ uniqueId, examId });
+//       if (!isUIDValid) {
+//         continue;
+//       }
+//       const existingDoc = await Document.findOne({ uniqueId, examId });
+//       if (existingDoc) {
+//         if (existingDoc.documentPath && fs.existsSync(existingDoc.documentPath)) {
+//           try {
+//             fs.unlinkSync(existingDoc.documentPath);
+//           } catch (err) {
+//             console.warn('Failed to delete old document file:', err);
+//           }
+//         }
+//         existingDoc.documentPath = file.path;
+//         existingDoc.uploadedBy = uploadedBy;
+//         existingDoc.uploadedOn = new Date();
+//         await existingDoc.save();
+//         updated++;
+//       } else {
+//         await Document.create({
+//           uniqueId,
+//           examId,
+//           uploadedBy,
+//           documentPath: file.path,
+//         });
+//         added++;
+//       }
+//     }
+
+//     res.status(200).json({ message: 'Documents processed successfully', added, updated });
+//   } catch (error) {
+//     res.status(500).json({ message: 'Failed to upload documents' });
+//   }
+// };
+
 export const bulkUploadDocuments = async (req, res) => {
   try {
     const { examId } = req.body; 
@@ -648,14 +695,31 @@ export const bulkUploadDocuments = async (req, res) => {
 
     let added = 0;
     let updated = 0;
+    let failed = 0;
+    let errors = [];
 
     for (const file of files) {
-      const uniqueId = await extractUserIdFromQR(file.path);
-      if (!uniqueId) continue;
-      const isUIDValid = await UIDMap.exists({ uniqueId, examId });
-      if (!isUIDValid) {
+      let uniqueId;
+      try {
+        uniqueId = await extractUserIdFromQR(file.path);
+        if (!uniqueId) {
+          failed++;
+          errors.push({ file: file.originalname, error: "QR code not found" });
+          continue;
+        }
+      } catch (err) {
+        failed++;
+        errors.push({ file: file.originalname, error: err.message || "QR extraction failed" });
         continue;
       }
+
+      const isUIDValid = await UIDMap.exists({ uniqueId, examId });
+      if (!isUIDValid) {
+        failed++;
+        errors.push({ file: file.originalname, error: "UID not valid for this exam" });
+        continue;
+      }
+
       const existingDoc = await Document.findOne({ uniqueId, examId });
       if (existingDoc) {
         if (existingDoc.documentPath && fs.existsSync(existingDoc.documentPath)) {
@@ -681,7 +745,13 @@ export const bulkUploadDocuments = async (req, res) => {
       }
     }
 
-    res.status(200).json({ message: 'Documents processed successfully', added, updated });
+    res.status(200).json({ 
+      message: 'Documents processed successfully', 
+      added, 
+      updated, 
+      failed, 
+      errors 
+    });
   } catch (error) {
     res.status(500).json({ message: 'Failed to upload documents' });
   }
@@ -776,10 +846,15 @@ export const sendEvaluation = async (req, res) => {
 
 export const flagEvaluations = async (req, res) => {
   const { examId } = req.params; 
-  if (!examId) return res.status(400).json({ message: 'Exam ID is required!' });
+
+  if (!examId) {
+    return res.status(400).json({ message: 'Exam ID is required!' });
+  }
 
   const exam = await Examination.findById(examId);
-  if (!exam) return res.status(404).json({ message: 'Exam not found!' });
+  if (!exam) {
+    return res.status(404).json({ message: 'Exam not found!' });
+  }
 
   try {
     const evaluations = await PeerEvaluation.find({ 
@@ -790,82 +865,95 @@ export const flagEvaluations = async (req, res) => {
     if (!evaluations.length) {
       return res.status(400).json({ message: 'No completed evaluations found for this exam!' });
     }
+    console.log(`Found ${evaluations.length} completed evaluations for exam ID: ${examId}`);
 
     const enrolledStudents = await Enrollment.find({ 
       batch: exam.batch, 
       status: 'active' 
     }).populate('student');
+    console.log(`Found ${enrolledStudents.length} enrolled students for exam ID: ${examId}`);
 
-    // Build a map: studentId -> [evaluations]
-    const studentEvalMap = new Map();
-    for (const evalObj of evaluations) {
-      const sid = evalObj.student._id.toString();
-      if (!studentEvalMap.has(sid)) studentEvalMap.set(sid, []);
-      studentEvalMap.get(sid).push(evalObj);
-    }
-
-    // Calculate averages
     const studentAverages = new Map();
-    for (const enrollment of enrolledStudents) {
-      const sid = enrollment.student._id.toString();
-      const evals = studentEvalMap.get(sid) || [];
-      if (evals.length > 0) {
-        const totalScore = evals.reduce((sum, e) => {
-          const s = Array.isArray(e.score) ? e.score.reduce((a, b) => a + b, 0) : e.score;
-          return sum + s;
-        }, 0);
-        studentAverages.set(sid, totalScore / evals.length);
-      }
-    }
+    
+    enrolledStudents.forEach(enrollment => {
+      const studentId = enrollment.student._id.toString();
+      const studentEvaluations = evaluations.filter(evaluation => evaluation.student._id.toString() === studentId);
 
-    if (studentAverages.size === 0) {
-      return res.status(400).json({ message: 'No averages could be calculated.' });
-    }
+      if (studentEvaluations.length > 0) {
+        const totalScore = studentEvaluations.reduce((sum, evaluation) => {
+          const evalScore = Array.isArray(evaluation.score) 
+            ? evaluation.score.reduce((a, b) => a + b, 0) 
+            : evaluation.score;
+          return sum + evalScore;
+        }, 0);
+        
+        const avgScore = totalScore / studentEvaluations.length;
+        studentAverages.set(studentId, avgScore);
+      }
+    });
 
     const classAverage = Array.from(studentAverages.values()).reduce((sum, avg) => sum + avg, 0) / studentAverages.size;
-    const variance = Array.from(studentAverages.values()).reduce((sum, avg) => sum + Math.pow(avg - classAverage, 2), 0) / studentAverages.size;
+    console.log('Class average score:', classAverage);
+
+    const variance = Array.from(studentAverages.values()).reduce((sum, avg) => {
+      return sum + Math.pow(avg - classAverage, 2);
+    }, 0) / studentAverages.size;
+    
     const classStdDev = Math.sqrt(variance);
+    console.log('Class standard deviation:', classStdDev);
 
     await Statistics.findOneAndUpdate(
       { exam_id: examId },
-      { exam_id: examId, avg_score: classAverage, std_dev: classStdDev },
+      { 
+        exam_id: examId,
+        avg_score: classAverage,
+        std_dev: classStdDev 
+      },
       { upsert: true, new: true }
     );
-
-    let flagIds = [];
+    console.log('Statistics updated in the database:', { exam_id: examId, avg_score: classAverage, std_dev: classStdDev });
 
     if (exam.k <= 3) {
-      // Flag by class std dev
-      for (const evalObj of evaluations) {
-        const evalScore = Array.isArray(evalObj.score) ? evalObj.score.reduce((a, b) => a + b, 0) : evalObj.score;
+      console.log('Case 1: k <= 3 - Checking evaluations against class standard deviation');
+      for (const evaluation of evaluations) {
+        const evalScore = Array.isArray(evaluation.score) 
+          ? evaluation.score.reduce((a, b) => a + b, 0) 
+          : evaluation.score;
+        
         const deviation = Math.abs(evalScore - classAverage);
-        if (deviation > 2 * classStdDev) flagIds.push(evalObj._id);
+        
+        if (deviation > 2 * classStdDev) {
+          await PeerEvaluation.findByIdAndUpdate(evaluation._id, { ticket: 1 });
+        }
       }
     } else {
-      // Flag by individual std dev
-      for (const [sid, studentAvg] of studentAverages) {
-        const evals = studentEvalMap.get(sid) || [];
-        if (evals.length > 1) {
-          const studentVariance = evals.reduce((sum, e) => {
-            const s = Array.isArray(e.score) ? e.score.reduce((a, b) => a + b, 0) : e.score;
-            return sum + Math.pow(s - studentAvg, 2);
-          }, 0) / evals.length;
+      console.log('Case 2: k > 3 - Checking evaluations against individual student standard deviations');
+      for (const [studentId, studentAvg] of studentAverages) {
+        const studentEvaluations = evaluations.filter(evaluation => evaluation.student._id.toString() === studentId);
+
+        if (studentEvaluations.length > 1) {
+          const studentVariance = studentEvaluations.reduce((sum, evaluation) => {
+            const evalScore = Array.isArray(evaluation.score) 
+              ? evaluation.score.reduce((a, b) => a + b, 0) 
+              : evaluation.score;
+            return sum + Math.pow(evalScore - studentAvg, 2);
+          }, 0) / studentEvaluations.length;
+          
           const studentStdDev = Math.sqrt(studentVariance);
-          for (const e of evals) {
-            const s = Array.isArray(e.score) ? e.score.reduce((a, b) => a + b, 0) : e.score;
-            const deviation = Math.abs(s - studentAvg);
-            if (deviation > 1.5 * studentStdDev) flagIds.push(e._id);
+          
+          for (const evaluation of studentEvaluations) {
+            const evalScore = Array.isArray(evaluation.score) 
+              ? evaluation.score.reduce((a, b) => a + b, 0) 
+              : evaluation.score;
+            
+            const deviation = Math.abs(evalScore - studentAvg);
+            
+            if (deviation > 1.5 * studentStdDev) {
+              await PeerEvaluation.findByIdAndUpdate(evaluation._id, { ticket: 1 });
+            }
           }
         }
       }
-    }
-
-    // Bulk update all flagged evaluations
-    if (flagIds.length > 0) {
-      await PeerEvaluation.updateMany(
-        { _id: { $in: flagIds } },
-        { $set: { ticket: 1 } }
-      );
     }
 
     exam.flags = true;
